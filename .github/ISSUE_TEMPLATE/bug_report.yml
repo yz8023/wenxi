@@ -1,0 +1,28 @@
+name: 故障反馈
+description: 提供版本、平台与最小复现步骤
+body:
+  - type: markdown
+    attributes:
+      value: 请勿上传账号备份、密码、Cookie、Token、完整日志 ZIP 或私人文件链接。安全漏洞请阅读 SECURITY.md。
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本与系统
+      placeholder: 例如 1.0.0+100 / Android 15 或 Windows 11 x64
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: 涉及的网盘或功能
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤、预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 已脱敏的错误摘要
+      description: 只提供必要内容，移除账号、凭据、私人文件名和路径。

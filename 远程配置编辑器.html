@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="文析助手的离线远程配置编辑器，可视化编辑并生成 config.json。">
+  <title>远程配置编辑器 · 文析助手</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%23007aff'/%3E%3Cpath d='M10 13h20M20 9v4m-6 1c2 8 7 13 16 16M26 14c-2 8-7 13-16 16' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root{--blue:#007aff;--blue-dark:#0064d4;--blue-tint:#edf5ff;--ink:#192334;--muted:#687489;--line:#e5eaf1;--canvas:#f5f7fb;--green:#14754c;--red:#bd303b;--amber:#8a5b0a;--radius:18px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--canvas);font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;font-size:14px;line-height:1.6}button,input,textarea,select{font:inherit}button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}button{cursor:pointer}a{color:var(--blue-dark);text-decoration:none}a:hover{text-decoration:underline}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,a:focus-visible,pre:focus-visible{outline:3px solid #8fc3ff;outline-offset:3px}button,input,textarea{transition:border-color .15s,background .15s,box-shadow .15s}h1,h2,h3,p{margin:0}button{color:inherit}svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}code,.mono{font-family:"Cascadia Code",Consolas,monospace}small{font-size:12px}[hidden]{display:none!important}.sr-only{position:absolute!important;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .rail{position:fixed;inset:0 auto 0 0;width:216px;background:#fff;border-right:1px solid var(--line);padding:32px 18px 22px;display:flex;flex-direction:column;z-index:20}.brand{display:flex;align-items:center;gap:11px;padding:0 9px}.brand-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:#fff;background:var(--blue);box-shadow:0 5px 14px #007aff20}.brand-mark svg{width:27px;height:27px;stroke-width:1.8}.brand strong{font-size:18px;letter-spacing:.04em}.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;margin-top:1px}.nav-caption{font-size:11px;color:#919aa9;letter-spacing:.12em;margin:43px 14px 12px}.nav{display:flex;flex-direction:column;gap:6px}.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border:0;border-radius:10px;background:transparent;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap}.nav button:hover{background:#f7f9fc}.nav button[aria-selected=true]{color:var(--blue-dark);background:var(--blue-tint)}.nav button .nav-dot{margin-left:auto;width:6px;height:6px;background:currentColor;border-radius:50%;opacity:0}.nav button[aria-selected=true] .nav-dot{opacity:1}.rail-foot{margin-top:auto;padding:28px 10px 0}.local-label{display:flex;align-items:center;gap:7px;color:var(--green);font-size:12px}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.rail-foot p{font-size:11px;color:var(--muted);margin:8px 0 15px;line-height:1.8}.text-button{border:0;background:none;color:var(--muted);padding:4px 0;font-size:12px}.text-button:hover{color:var(--blue-dark)}
+    .main{margin-left:216px;min-height:100vh}.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 34px;background:#ffffffd9;border-bottom:1px solid var(--line)}.breadcrumb{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:10px}.breadcrumb b{font-weight:500;color:var(--ink)}.toolbar{display:flex;align-items:center;gap:9px}.button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:39px;padding:8px 14px;border:1px solid #dce3ed;border-radius:9px;background:#fff;white-space:nowrap;font-weight:550;font-size:13px}.button svg{width:16px;height:16px}.button:hover{background:#f7faff;border-color:#b8cbe2;text-decoration:none}.button.primary{background:var(--blue);border-color:var(--blue);color:#fff}.button.primary:hover{background:var(--blue-dark)}.button.ghost{background:transparent;border-color:transparent}.button.ghost:hover{background:var(--blue-tint)}.button.compact{min-height:34px;padding:5px 11px;font-size:12px}
+    .content{max-width:1500px;margin:0 auto;padding:28px 34px 38px}.page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:23px}h1{font-size:27px;line-height:1.4;font-weight:700;letter-spacing:-.035em}.subtitle{margin-top:7px;font-size:13px;color:var(--muted)}.draft-state{text-align:right;color:var(--muted);font-size:11px;max-width:240px;padding-top:6px;overflow-wrap:anywhere}.draft-state strong{display:block;font-size:12px;font-weight:500;margin-bottom:3px;color:#4f5d70}.release-strip{background:#fff;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;gap:23px;padding:15px 18px;margin-bottom:22px}.revision-control{flex:none}.revision-control>label{font-size:12px;font-weight:600;display:block;margin-bottom:5px}.revision-input{display:flex;gap:7px}.revision-input input{width:91px;height:35px}.revision-input .button{height:35px;min-height:35px}.revision-note{flex:1;min-width:0;border-left:1px solid var(--line);padding-left:21px;font-size:12px;color:var(--muted)}.revision-note .check-label{color:var(--ink);margin-bottom:4px}.source-link{font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:5px}.source-link svg{width:14px;height:14px}.check-label{display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer}.check-label input{accent-color:var(--blue);width:14px;height:14px;margin:0}
+    .workspace{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}.editor{min-width:0}.section{display:flex;flex-direction:column;gap:19px}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.card-head{padding:23px 24px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #edf0f5}.card-head h2{font-size:17px;font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}.card-head h2 svg{color:var(--blue);width:19px;height:19px}.card-head p{font-size:12px;color:var(--muted);margin-top:5px}.card-body{padding:23px 24px 25px}.stack{display:flex;flex-direction:column;gap:19px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{min-width:0}.field>label,.field-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:600;margin-bottom:7px}.field-label small,.field>label small{font-weight:400;color:#8c96a5;font-size:10px}.field input:not([type=checkbox]):not([type=radio]),.field textarea,.revision-input input{background:#fbfcfe;border:1px solid #dfe5ee;border-radius:8px;padding:10px 11px;color:var(--ink);outline:none;min-width:0}.field input:not([type=checkbox]):not([type=radio]),.field textarea{width:100%}.field input:focus,.field textarea:focus,.revision-input input:focus{background:#fff;border-color:var(--blue);box-shadow:0 0 0 3px #007aff12}.field textarea{display:block;resize:vertical;min-height:90px;line-height:1.75}.field input::placeholder,.field textarea::placeholder{color:#a0a9b8;font-size:12px}.field input[type=url]{font-size:12px}.field .joined-input{display:flex;gap:8px}.field .joined-input input{flex:1}.hint{font-size:11px;color:var(--muted);line-height:1.75;margin-top:6px}.count{float:right;font-size:10px;color:#9aa3b1;font-variant-numeric:tabular-nums;margin:5px 0 0 10px}.field-error{color:var(--red);font-size:11px;line-height:1.65;margin-top:5px}.field [aria-invalid=true],.revision-input [aria-invalid=true]{border-color:var(--red)!important;background:#fff8f8!important}.field-divider{border-top:1px solid var(--line);padding-top:19px}.minor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.minor-heading h3{font-size:12px;font-weight:600}.minor-heading small{font-size:11px;color:var(--muted)}.switch-label{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;flex:none}.switch{position:relative;display:inline-flex;align-items:center;width:36px;height:21px;flex:none}.switch input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}.switch-track{width:100%;height:100%;border-radius:20px;background:#dce2eb;transition:background .18s}.switch-track:after{content:"";display:block;width:15px;height:15px;margin:3px;background:#fff;border-radius:50%;box-shadow:0 1px 3px #0002;transition:transform .18s}.switch input:checked+.switch-track{background:var(--blue)}.switch input:checked+.switch-track:after{transform:translateX(15px)}.switch input:focus-visible+.switch-track{outline:3px solid #8fc3ff;outline-offset:3px}.small-note{padding:12px 14px;background:#f4f8fe;border-radius:9px;color:#5e728d;font-size:11px;line-height:1.85;display:flex;align-items:flex-start;gap:9px}.small-note svg{width:15px;height:15px;margin-top:3px;flex:none}.warning-note{background:#fff8e9;color:var(--amber)}
+    .preview-card{border-radius:var(--radius);background:#edf1f7;border:1px solid #e4e9f0;padding:18px 22px 22px}.preview-label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:#748198;margin-bottom:17px}.preview-label strong{font-weight:500;display:flex;align-items:center;gap:6px}.preview-label svg{width:15px;height:15px}.preview-dialog{max-width:400px;margin:auto;background:#fff;border-radius:15px;padding:23px 24px 15px;box-shadow:0 6px 20px #26395c08}.preview-dialog h3{font-size:16px;font-weight:650;display:flex;align-items:flex-start;gap:9px;overflow-wrap:anywhere}.preview-dialog h3 svg{color:var(--blue);margin-top:2px;width:18px;height:18px}.preview-content{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.85;color:#5a6473;margin-top:15px;max-height:230px;overflow:auto}.preview-actions{display:flex;gap:15px;justify-content:flex-end;flex-wrap:wrap;align-items:center;margin-top:20px;padding-top:12px;border-top:1px solid #f1f3f7;font-size:12px;color:var(--blue-dark)}.preview-actions span{overflow-wrap:anywhere;max-width:100%}.preview-actions .preview-button{background:var(--blue);color:#fff;padding:6px 10px;border-radius:7px}.preview-footnote{font-size:10px;color:#8b95a6;text-align:center;margin-top:13px}.muted{color:var(--muted)}.cloud-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cloud-item{padding:15px 16px;border:1px solid var(--line);border-radius:12px;min-width:0}.cloud-item.paused{background:#fffcf5;border-color:#ecdfc5}.cloud-head{display:flex;align-items:center;gap:9px;margin-bottom:13px}.cloud-symbol{width:29px;height:29px;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:650;color:var(--cloud-color);background:var(--cloud-tint);flex:none}.cloud-name{flex:1;font-weight:600;font-size:12px}.cloud-item .field>label{font-size:10px;color:var(--muted);font-weight:400}.cloud-item .field textarea{font-size:11px;min-height:59px;line-height:1.6;padding:8px 10px}.cloud-item .field textarea::placeholder{font-size:11px}.cloud-summary{font-size:12px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.platform-icon{width:29px;height:29px;border-radius:8px;display:grid;place-items:center;background:#eff5ff;color:var(--blue);font-size:12px;font-weight:600}.policy{border:0;margin:0;padding:0;min-width:0}.policy legend{font-size:12px;font-weight:600;margin-bottom:8px;padding:0}.policy-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.policy-option{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:10px;cursor:pointer}.policy-option:has(input:checked){background:var(--blue-tint);border-color:#a8ceff}.policy-option input{accent-color:var(--blue);margin:4px 0 0;flex:none}.policy-option strong{display:block;font-size:12px;font-weight:550}.policy-option small{display:block;font-size:10px;color:var(--muted);margin-top:2px}.build-hint{font-size:11px;color:var(--muted);margin-top:7px}.platform-tabs{display:flex;gap:4px;background:#e2e8f1;border-radius:7px;padding:3px}.platform-tabs button{border:0;background:none;border-radius:5px;padding:4px 9px;font-size:10px;color:var(--muted)}.platform-tabs button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px #0001}
+    .inspector{position:sticky;top:24px;min-width:0;display:flex;flex-direction:column;gap:16px}.json-card{border-radius:15px;background:#172237;color:#dbe6f7;overflow:hidden;box-shadow:0 6px 24px #1527490c}.json-head{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid #ffffff12}.json-head strong{font-size:13px;font-weight:550;display:flex;align-items:center;gap:9px}.json-head strong span{font:14px Consolas,monospace;color:#77acff}.json-head small{color:#8394af;font-size:10px}.json-scroll{margin:0;padding:19px 20px;height:416px;overflow:auto;font:11px/1.95 "Cascadia Code",Consolas,monospace;tab-size:2;scrollbar-width:thin;scrollbar-color:#384a65 transparent}.json-scroll code{font:inherit}.json-key{color:#8abfff}.json-string{color:#b4d6bb}.json-number{color:#ecc99a}.json-bool{color:#c5b9f8}.json-meta{padding:11px 18px;display:flex;justify-content:space-between;font-size:10px;color:#8596ae;background:#ffffff04;border-top:1px solid #ffffff0b}.output-actions{display:flex;gap:9px}.output-actions .button{flex:1;min-width:0}.check-card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 18px}.check-heading{font-size:12px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:7px}.check-heading.invalid{color:var(--red)}.check-heading svg{width:16px;height:16px}.check-subtitle{font-size:11px;color:var(--muted);margin-top:5px}.check-list{list-style:none;padding:0;margin:8px 0 0;font-size:11px;line-height:1.8}.check-list:empty{display:none}.check-list li+li{margin-top:7px}.issue-link{border:0;background:none;padding:0;color:var(--red);font:inherit;text-align:left;text-decoration:underline;text-decoration-color:#bd303b40;text-underline-offset:3px;overflow-wrap:anywhere}.check-list .warning{color:var(--amber)}.publish-help{padding:0 5px;font-size:11px;line-height:1.9;color:#78859a}.publish-help strong{display:block;font-size:12px;color:#4a586b;margin-bottom:4px;font-weight:550}.publish-help ol{padding-left:17px;margin:6px 0}.publish-help a{font-size:11px}.save-summary{font-size:11px;color:var(--blue-dark);padding-top:4px;overflow-wrap:anywhere}
+    .toast{position:fixed;bottom:26px;left:calc(50% + 108px);transform:translateX(-50%);z-index:100;background:#1d2c45;color:#fff;border:1px solid #35445d;box-shadow:0 6px 25px #1113;border-radius:10px;padding:12px 20px;font-size:12px;max-width:calc(100vw - 35px);width:max-content;line-height:1.7}.toast.error{background:#842d36;border-color:#a7404c}dialog{padding:0;border:1px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);width:min(650px,calc(100% - 32px));max-height:calc(100dvh - 48px);box-shadow:0 24px 90px #0c183538}dialog::backdrop{background:#14223e66;backdrop-filter:blur(3px)}.dialog-content{padding:25px}.dialog-top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:8px}.dialog-top h2{font-size:18px}.close-button{width:30px;height:30px;border:0;border-radius:7px;background:#f1f4f8;font-size:20px;color:#758195;line-height:1}.dialog-lead{font-size:12px;color:var(--muted);margin-bottom:17px}.raw-input{width:100%;height:310px;resize:vertical;padding:14px;border:1px solid #dce3ed;border-radius:9px;font:12px/1.8 Consolas,"Microsoft YaHei UI",monospace;outline:none;background:#fbfcfe;tab-size:2}.raw-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #007aff12}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.import-error{white-space:pre-wrap;font-size:12px;color:var(--red);margin-top:10px;max-height:150px;overflow:auto;overflow-wrap:anywhere}.no-script{margin:20px;padding:20px;color:var(--red);background:#fff}
+    @media(min-width:1600px){.workspace{grid-template-columns:minmax(0,1fr) 400px}.json-scroll{height:460px}}
+    @media(max-width:1240px){.rail{width:188px;padding-inline:12px}.main{margin-left:188px}.content{padding:25px 24px}.topbar{padding:19px 24px}.workspace{grid-template-columns:minmax(0,1fr) 320px;gap:18px}.card-head,.card-body{padding-inline:20px}.release-strip{gap:15px}.revision-note{padding-left:15px}.release-strip .source-link{display:none}.toast{left:calc(50% + 94px)}.cloud-grid{grid-template-columns:1fr}}
+    @media(max-width:1050px){.rail{width:174px;padding-inline:10px}.main{margin-left:174px}.workspace{grid-template-columns:minmax(0,1fr) 295px;gap:16px}.content{padding:24px 20px}.topbar{padding:18px 20px}.breadcrumb{display:none}.toolbar{margin-left:auto}.card-head,.card-body{padding:19px 17px}.form-row{gap:11px}.page-heading{gap:12px}.draft-state{max-width:170px}.preview-card{padding:16px}.preview-dialog{padding:20px 18px 14px}.policy-option{padding:8px;gap:6px}.policy-option small{font-size:10px}.button{padding-inline:11px}.toast{left:calc(50% + 87px)}}
+    @media(max-width:930px){.workspace{grid-template-columns:minmax(0,1fr)}.inspector{position:static;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:14px}.json-card{grid-row:span 3}.json-scroll{height:340px}.output-actions{order:-1;grid-column:1/-1}.publish-help{grid-column:2}.check-card{grid-column:2}.save-summary{grid-column:1/-1}.cloud-grid{grid-template-columns:1fr 1fr}.page-heading .draft-state{max-width:210px}.toast{left:calc(50% + 87px)}}
+    @media(max-width:700px){.rail{position:sticky;inset:0 0 auto;width:100%;height:auto;padding:12px 17px 10px;border-right:0;border-bottom:1px solid var(--line);background:#ffffffed;backdrop-filter:blur(12px)}.brand{padding:0;gap:8px}.brand-mark{width:28px;height:28px;border-radius:8px;box-shadow:none}.brand-mark svg{width:20px;height:20px}.brand strong{font-size:14px;letter-spacing:0}.brand small{display:inline;margin-left:9px;font-size:10px;letter-spacing:0}.rail .nav-caption,.rail-foot{display:none}.nav{flex-direction:row;gap:4px;margin-top:11px}.nav button{padding:8px 8px;justify-content:center;gap:5px;border-radius:7px;font-size:11px}.nav button svg{width:15px;height:15px}.nav button .nav-dot{display:none}.main{margin-left:0}.topbar{padding:13px 17px;justify-content:flex-end}.toolbar{width:100%;gap:7px}.toolbar .button{flex:1;font-size:11px;min-height:36px;padding:7px 8px;gap:5px}.toolbar .button svg{width:14px;height:14px}.content{padding:21px 17px 32px}.page-heading{display:block;margin-bottom:18px}h1{font-size:24px}.subtitle{font-size:12px;margin-top:5px}.draft-state{text-align:left;display:flex;gap:8px;padding-top:10px;max-width:100%!important}.draft-state strong{font-size:10px;margin:0}.draft-state span{font-size:10px}.release-strip{align-items:flex-start;padding:13px;gap:13px;border-radius:10px;margin-bottom:17px}.revision-input input{width:73px;height:34px;font-size:12px;padding:7px 9px}.revision-control>label{font-size:11px}.revision-note{font-size:10px;padding-left:12px}.revision-note .check-label{font-size:11px;margin:2px 0 7px}.card{border-radius:14px}.card-head{padding:18px 17px}.card-head h2{font-size:16px}.card-head p{font-size:11px}.card-body{padding:20px 17px}.section{gap:16px}.form-row{gap:13px}.cloud-grid{gap:11px}.cloud-item{padding:13px}.cloud-name{font-size:11px}.cloud-symbol{width:24px;height:24px;font-size:10px}.cloud-head{gap:6px}.cloud-head .switch{width:32px}.cloud-head .switch input:checked+.switch-track:after{transform:translateX(11px)}.cloud-head .switch-label>span:last-child{display:none}.preview-dialog{max-width:390px}.preview-card{border-radius:14px}.toast{left:50%;bottom:18px}.dialog-content{padding:21px}.raw-input{height:270px}.inspector{margin-top:3px}.json-scroll{font-size:10px;padding:16px;line-height:1.9}}
+    @media(max-width:480px){.inspector{display:flex;flex-direction:column}.inspector>*{width:100%}.json-scroll{height:330px;font-size:11px}.json-card{order:1}.output-actions{order:0}.check-card{order:2}.publish-help{order:3}.save-summary{order:4}.cloud-grid{grid-template-columns:1fr}.cloud-head .switch-label>span:last-child{display:inline}.cloud-head .switch{width:36px}.cloud-head .switch input:checked+.switch-track:after{transform:translateX(15px)}.cloud-name{font-size:12px}.cloud-symbol{width:28px;height:28px}.form-row{grid-template-columns:1fr}.version-row{grid-template-columns:1fr 1fr}.nav button{font-size:10px;padding-inline:5px;gap:4px}.nav button svg{width:14px;height:14px}.release-strip .button{padding-inline:8px}.revision-note{line-height:1.7}.field .joined-input .button{font-size:11px;padding-inline:10px}.card-head{gap:10px}.card-head .switch-label{gap:6px}.preview-label{font-size:10px}.preview-card{padding:16px 14px}.policy-option small{font-size:10px}.page-heading .draft-state{display:block}.draft-state strong{display:inline;margin-right:8px}}
+    @media(max-width:360px){.nav button{gap:0;min-width:0;flex:1}.nav button svg{display:none}.toolbar .button{font-size:10px;padding-inline:6px;gap:4px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" class="sr-only" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-notice" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a5 5 0 1 1 .4-10A7 7 0 0 1 21 10.5 3.8 3.8 0 0 1 19 18Z"/></symbol>
+    <symbol id="i-update" viewBox="0 0 24 24"><path d="M12 16V4m-4 4 4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><path d="M3 4h5a5 5 0 0 1 4 2 5 5 0 0 1 4-2h5v15h-5a5 5 0 0 0-4 2 5 5 0 0 0-4-2H3ZM12 6v15"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8Zm0 0v5h5M12 18v-7m-3 3 3-3 3 3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V3H3v13h5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 3h7v7m0-7L10 14M9 5H3v16h16v-6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+  </defs></svg>
+  <noscript><p class="no-script">请使用启用了 JavaScript 的浏览器打开这个文件。编辑器在本地运行。</p></noscript>
+  <aside class="rail" aria-label="配置导航">
+    <div class="brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M9 12h22M20 7v5m-6 2c2 8 7 13 16 17M26 14c-2 8-7 13-16 17"/></svg></div><div><strong>文析助手</strong><small>远程配置工具</small></div></div>
+    <p class="nav-caption">配置内容</p>
+    <nav class="nav" role="tablist" aria-label="编辑内容" aria-orientation="vertical">
+      <button id="tab-announcement" role="tab" aria-selected="true" aria-controls="section-announcement" data-section="announcement"><svg aria-hidden="true"><use href="#i-notice"/></svg>公告与推广<span class="nav-dot"></span></button>
+      <button id="tab-clouds" role="tab" aria-selected="false" aria-controls="section-clouds" data-section="clouds" tabindex="-1"><svg aria-hidden="true"><use href="#i-cloud"/></svg>网盘开关<span class="nav-dot"></span></button>
+      <button id="tab-updates" role="tab" aria-selected="false" aria-controls="section-updates" data-section="updates" tabindex="-1"><svg aria-hidden="true"><use href="#i-update"/></svg>版本更新<span class="nav-dot"></span></button>
+      <button id="tab-help" role="tab" aria-selected="false" aria-controls="section-help" data-section="help" tabindex="-1"><svg aria-hidden="true"><use href="#i-help"/></svg>帮助与介绍<span class="nav-dot"></span></button>
+    </nav>
+    <div class="rail-foot"><div class="local-label"><span class="dot"></span>离线可用 · 单文件</div><p>双击打开，填写并导出。<br>草稿保存在当前浏览器。</p><button class="text-button" id="new-config">＋ 新建空白配置</button></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="breadcrumb">文析助手<span>/</span><b>配置工作台</b></div><div class="toolbar">
+      <button class="button ghost" id="paste-open"><svg aria-hidden="true"><use href="#i-copy"/></svg>粘贴 JSON</button>
+      <button class="button" id="import-open"><svg aria-hidden="true"><use href="#i-import"/></svg>导入文件</button>
+      <button class="button primary" data-download><svg aria-hidden="true"><use href="#i-download"/></svg>下载 config.json</button>
+    </div></header>
+    <div class="content">
+      <div class="page-heading"><div><h1>远程配置编辑器</h1><p class="subtitle">调整应用设置，实时生成一份 config.json。</p></div><div class="draft-state"><strong id="source-state">本地模板 · 尚未导入配置</strong><span id="draft-state" role="status">草稿准备中</span></div></div>
+      <div class="release-strip">
+        <div class="revision-control"><label for="field-revision">配置修订号 <span class="muted mono">revision</span></label><div class="revision-input"><input id="field-revision" data-path="revision" type="number" min="1" max="2147483647" step="1" aria-describedby="revision-context error-revision"><button class="button compact" id="bump-revision" title="增加配置修订号">＋1</button></div><p id="error-revision" class="field-error" data-error-for="revision" hidden></p></div>
+        <div class="revision-note"><label class="check-label"><input type="checkbox" id="auto-revision">兼容旧客户端：自动递增修订号</label><p id="revision-context">新版应用直接使用获取到的内容，无需修改修订号或公告 ID。</p></div>
+        <a class="source-link" href="https://gitee.com/dzys/cs/raw/master/config.json" target="_blank" rel="noopener noreferrer">查看线上配置<svg aria-hidden="true"><use href="#i-link"/></svg></a>
+      </div>
+      <div class="workspace">
+        <div class="editor" id="editor">
+          <section class="section" id="section-announcement" role="tabpanel" aria-labelledby="tab-announcement">
+            <div class="card">
+              <div class="card-head"><div><h2><svg aria-hidden="true"><use href="#i-notice"/></svg>公告与推广</h2><p>独立弹窗，也可添加活动或推广链接。</p></div><label class="switch-label"><span class="switch"><input type="checkbox" data-path="announcement.enabled" aria-label="启用公告"><span class="switch-track"></span></span><span data-toggle-text="announcement.enabled">已关闭</span></label></div>
+              <div class="card-body stack">
+                <div class="small-note"><svg aria-hidden="true"><use href="#i-info"/></svg><span>用户可在公告弹窗勾选“今天不再显示”，当天不再自动弹出，次日恢复。普通关闭后，下次完整启动仍会提醒。</span></div>
+                <div class="field"><label for="field-announcement-title">公告标题</label><input id="field-announcement-title" data-path="announcement.title" maxlength="80" placeholder="输入公告标题"><span class="count" data-count-for="announcement.title" data-limit="80"></span></div>
+                <div class="field"><label for="field-announcement-content">公告正文</label><textarea id="field-announcement-content" data-path="announcement.content" rows="5" maxlength="8192" placeholder="在这里填写公告内容，直接回车即可换行。"></textarea><span class="count" data-count-for="announcement.content" data-limit="8192"></span><p class="hint">按普通文字显示，支持多行。</p></div>
+                <div class="field-divider"><div class="minor-heading"><h3>跳转按钮</h3><small>选填 · 两项同时填写或留空</small></div><div class="form-row">
+                  <div class="field"><label for="field-announcement-buttonText">按钮文字</label><input id="field-announcement-buttonText" data-path="announcement.buttonText" maxlength="24" placeholder="例如 查看详情"></div>
+                  <div class="field"><label for="field-announcement-buttonUrl">跳转地址</label><input id="field-announcement-buttonUrl" data-path="announcement.buttonUrl" type="url" maxlength="2048" placeholder="https://…" spellcheck="false"></div>
+                </div></div>
+              </div>
+            </div>
+            <div class="preview-card"><div class="preview-label"><strong><svg aria-hidden="true"><use href="#i-eye"/></svg>公告效果预览</strong><span id="notice-preview-state">当前未启用</span></div><div class="preview-dialog"><h3><svg aria-hidden="true"><use href="#i-notice"/></svg><span id="notice-preview-title">文析助手公告</span></h3><p class="preview-content" id="notice-preview-content">填写正文后，可在这里预览。</p><label class="check-label" style="margin-top:18px;color:var(--muted)"><input type="checkbox" id="preview-hide-today">今天不再显示</label><div class="preview-actions"><span>知道了</span><span class="preview-button" id="notice-preview-button" hidden></span></div></div><p class="preview-footnote">0.3.47 起支持“今天不再显示”，按用户设备日期计算。此处勾选仅用于预览。</p></div>
+          </section>
+          <section class="section" id="section-clouds" role="tabpanel" aria-labelledby="tab-clouds" hidden>
+            <div class="card"><div class="card-head"><div><h2><svg aria-hidden="true"><use href="#i-cloud"/></svg>网盘开关</h2><p>按网盘控制服务入口，停用时展示说明。</p></div></div><div class="card-body"><div class="cloud-summary"><span id="cloud-summary">13 个网盘全部开放</span><button class="button compact" id="enable-all-clouds">全部开启</button></div><div class="cloud-grid" id="cloud-fields"></div><div class="small-note" style="margin-top:18px"><svg aria-hidden="true"><use href="#i-info"/></svg><span>停用后会限制新的解析、浏览和下载等操作；已经开始的下载和播放可以继续。重新开启后，再发布新的修订号即可恢复入口。</span></div></div></div>
+          </section>
+          <section class="section" id="section-updates" role="tabpanel" aria-labelledby="tab-updates" hidden>
+            <div class="small-note"><svg aria-hidden="true"><use href="#i-info"/></svg><span>两个平台独立设置。应用只在远程 <b>build 大于已安装构建号</b>时提醒。此编辑器制作时的安装包为 0.5.0，build 53。</span></div>
+            <div id="update-fields" class="section"></div>
+            <div class="preview-card"><div class="preview-label"><strong><svg aria-hidden="true"><use href="#i-eye"/></svg>更新效果预览</strong><div class="platform-tabs" aria-label="更新预览平台"><button data-preview-platform="android" aria-pressed="true">Android</button><button data-preview-platform="windows" aria-pressed="false">Windows</button></div></div><div class="preview-dialog"><h3><svg aria-hidden="true"><use href="#i-update"/></svg><span id="update-preview-title">发现新版本</span></h3><p class="hint" id="update-preview-meta"></p><p class="preview-content" id="update-preview-notes"></p><div class="preview-actions"><span id="update-preview-ignore">忽略此版本</span><span id="update-preview-close">暂不更新</span><span class="preview-button" id="update-preview-download">前往下载</span></div></div><p class="preview-footnote" id="update-preview-state"></p></div>
+          </section>
+          <section class="section" id="section-help" role="tabpanel" aria-labelledby="tab-help" hidden>
+            <div class="card"><div class="card-head"><div><h2><svg aria-hidden="true"><use href="#i-help"/></svg>使用帮助</h2><p>“我的 → 帮助与诊断 → 使用帮助”的跳转地址。</p></div><label class="switch-label"><span class="switch"><input type="checkbox" data-path="help.enabled" aria-label="启用使用帮助"><span class="switch-track"></span></span><span data-toggle-text="help.enabled">已关闭</span></label></div><div class="card-body"><div class="field"><label for="field-help-url">帮助页面地址</label><input id="field-help-url" data-path="help.url" type="url" maxlength="2048" placeholder="https://…" spellcheck="false"><p class="hint">填写真实 HTTPS 链接，点击后由系统浏览器打开。</p></div></div></div>
+            <div class="card"><div class="card-head"><div><h2>关于文析助手</h2><p>自定义“关于”弹窗中的文字介绍。</p></div></div><div class="card-body"><div class="field"><label for="field-about-description">软件介绍</label><textarea id="field-about-description" data-path="about.description" rows="6" maxlength="8192" placeholder="填写软件介绍，留空则使用应用内置文字。"></textarea><span class="count" data-count-for="about.description" data-limit="8192"></span><p class="hint">留空使用默认介绍。应用版本号由安装包决定。</p></div></div></div>
+            <div class="preview-card"><div class="preview-label"><strong><svg aria-hidden="true"><use href="#i-eye"/></svg>关于效果预览</strong><span>纯文字</span></div><div class="preview-dialog"><h3>关于文析助手</h3><p class="preview-content" id="about-preview"></p><div class="preview-actions"><span>关闭</span></div></div></div>
+          </section>
+        </div>
+        <aside class="inspector" aria-label="JSON 与发布检查">
+          <div class="json-card"><div class="json-head"><strong><span>{ }</span>config.json</strong><small>实时生成</small></div><pre class="json-scroll" tabindex="0" aria-label="生成的 JSON"><code id="json-output"></code></pre><div class="json-meta"><span>UTF-8 · schema 1</span><span id="json-size"></span></div></div>
+          <div class="output-actions"><button class="button" id="copy-json"><svg aria-hidden="true"><use href="#i-copy"/></svg>复制 JSON</button><button class="button primary" data-download><svg aria-hidden="true"><use href="#i-download"/></svg>下载文件</button></div>
+          <div class="check-card"><div class="check-heading" id="check-heading"><svg aria-hidden="true"><use href="#i-check"/></svg><span id="check-title" role="status">正在检查配置</span></div><p class="check-subtitle" id="check-subtitle"></p><ul class="check-list" id="error-list"></ul><ul class="check-list" id="warning-list"></ul></div>
+          <div class="check-card" aria-label="发布前核对"><div class="field"><label for="live-url">线上配置入口</label><input id="live-url" type="url" maxlength="2048" spellcheck="false" value="https://gitee.com/dzys/cs/raw/master/config.json"></div><button class="button compact" id="check-live" style="margin-top:12px">核对线上修订号</button><p class="hint" id="live-status" role="status">尚未核对线上版本。</p><p class="hint">核对只读取线上文件。网络或浏览器跨域限制导致失败时，可核对刚下载的副本，或使用项目中的发布校验命令。</p><button class="text-button" id="reference-open">用已下载的线上 JSON 核对</button></div>
+          <div class="publish-help"><strong>让配置在应用中生效</strong><ol><li>先导入线上配置，再修改需要的内容。</li><li>核对线上修订号，再下载或复制完整 JSON。</li><li>替换 Gitee 上的 config.json 并提交。</li></ol><a href="https://gitee.com/dzys/cs/blob/master/config.json" target="_blank" rel="noopener noreferrer">打开 Gitee 配置文件 ↗</a><p style="margin-top:7px">在应用内打开“软件公告”或“检查更新”可立即刷新配置。</p><button class="text-button" id="new-config-footer" style="margin-top:8px">＋ 新建空白配置</button></div>
+          <p class="save-summary" id="export-summary" role="status" hidden></p>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <input type="file" id="import-file" accept=".json,application/json,text/plain" hidden>
+  <dialog id="reference-dialog" aria-labelledby="reference-title"><div class="dialog-content"><div class="dialog-top"><h2 id="reference-title">核对线上文件副本</h2><button class="close-button" data-close-dialog="reference-dialog" aria-label="关闭核对窗口">×</button></div><p class="dialog-lead">粘贴刚从上述入口下载的完整 JSON。当前草稿继续保留；这里只比较修订号和内容。副本可能过时，提交前建议再用命令联网核对。</p><label class="sr-only" for="reference-text">线上 JSON 副本</label><textarea id="reference-text" class="raw-input" spellcheck="false"></textarea><p class="import-error" id="reference-error" role="alert" hidden></p><div class="dialog-actions"><button class="button" data-close-dialog="reference-dialog">取消</button><button class="button primary" id="apply-reference">核对副本</button></div></div></dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title"><div class="dialog-content"><div class="dialog-top"><h2 id="import-title">粘贴现有 JSON</h2><button class="close-button" data-close-dialog="import-dialog" aria-label="关闭导入窗口">×</button></div><p class="dialog-lead">粘贴完整的 config.json。检查通过后，替换当前编辑内容。</p><label class="sr-only" for="import-text">现有 JSON 内容</label><textarea class="raw-input" id="import-text" placeholder='{"schema": 1, "revision": 1, …}' spellcheck="false"></textarea><p class="import-error" id="import-error" role="alert" hidden></p><div class="dialog-actions"><button class="button" data-close-dialog="import-dialog">取消</button><button class="button primary" id="apply-import">校验并导入</button></div></div></dialog>
+  <dialog id="copy-dialog" aria-labelledby="copy-title"><div class="dialog-content"><div class="dialog-top"><h2 id="copy-title">手动复制 JSON</h2><button class="close-button" data-close-dialog="copy-dialog" aria-label="关闭复制窗口">×</button></div><p class="dialog-lead">浏览器未允许自动复制。内容已全选，请按 Ctrl+C（Mac 用 ⌘C），或长按复制。</p><label class="sr-only" for="manual-copy">可手动复制的 JSON</label><textarea id="manual-copy" class="raw-input" readonly spellcheck="false"></textarea><div class="dialog-actions"><button class="button" id="select-copy">重新全选</button><button class="button primary" id="finish-copy">已完成复制</button></div></div></dialog>
+  <dialog id="new-dialog" aria-labelledby="new-title"><div class="dialog-content"><div class="dialog-top"><h2 id="new-title">新建空白配置</h2><button class="close-button" data-close-dialog="new-dialog" aria-label="关闭新建窗口">×</button></div><p class="dialog-lead">当前草稿将被替换。新配置默认开放全部网盘，关闭公告、更新和帮助。需要保留当前内容时，请先下载 JSON。</p><div class="dialog-actions"><button class="button" data-close-dialog="new-dialog">取消</button><button class="button primary" id="confirm-new">新建配置</button></div></div></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script id="config-core">
+  (() => {
+    'use strict';
+    const MAX_BYTES = 256 * 1024;
+    const MAX_INT = 2147483647;
+    const DEFAULT_URL = 'https://gitee.com/dzys/cs/raw/master/config.json';
+    const CLOUDS = [
+      {key:'baidu',name:'百度网盘',short:'百',color:'#3478dd',tint:'#edf4ff'},
+      {key:'quark',name:'夸克网盘',short:'夸',color:'#6560dd',tint:'#f0efff'},
+      {key:'uc',name:'UC 网盘',short:'UC',color:'#ce7022',tint:'#fff3e9'},
+      {key:'pan123',name:'123 网盘',short:'123',color:'#297cdb',tint:'#eaf4ff'},
+      {key:'c139',name:'中国移动云盘',short:'移',color:'#228b76',tint:'#e9f7f3'},
+      {key:'tianyi',name:'天翼云盘',short:'天',color:'#d7772b',tint:'#fff2e9'},
+      {key:'xunlei',name:'迅雷网盘',short:'迅',color:'#3488a8',tint:'#e9f6fb'},
+      {key:'lanzou',name:'蓝奏云',short:'蓝',color:'#4986db',tint:'#edf5ff'},
+      {key:'guangya',name:'光鸭云盘',short:'鸭',color:'#997518',tint:'#fff7d6'},
+      {key:'aliyun',name:'阿里云盘',short:'阿',color:'#665cda',tint:'#f0edff'},
+      {key:'ilanzou',name:'蓝奏云优享版',short:'优',color:'#336bbd',tint:'#eaf2ff'},
+      {key:'weiyun',name:'腾讯微云',short:'微',color:'#4089c9',tint:'#eaf6ff'},
+      {key:'pan115',name:'115网盘',short:'115',color:'#2879eb',tint:'#edf5ff'},
+      {key:'wopan',name:'中国联通云盘',short:'联',color:'#cf4c4c',tint:'#fff0f0'}
+    ];
+    const PLATFORMS = ['android','windows'];
+    const DEFAULT_ABOUT = '网盘文件管理与 Gopeed 下载器\nAndroid · Windows';
+    const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+    const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const bytes = value => new TextEncoder().encode(value).length;
+    const emptyNotice = () => ({enabled:false,id:'',title:'',content:'',buttonText:'',buttonUrl:''});
+    const emptyUpdate = () => ({enabled:false,force:false,version:'',build:0,downloadUrl:'',notes:'',expiresAt:''});
+
+    function template() {
+      return {
+        schema:1, revision:1,
+        announcement:{...emptyNotice(),id:'notice-auto-1',title:'文析助手公告'},
+        clouds:Object.fromEntries(CLOUDS.map(c => [c.key,{enabled:true,message:'',expiresAt:''}])),
+        updates:Object.fromEntries(PLATFORMS.map(p => [p,{...emptyUpdate(),version:'0.5.0',build:53}])),
+        help:{enabled:false,url:''}, about:{description:DEFAULT_ABOUT}
+      };
+    }
+
+    // Add only the defaults used by the app. Preserve unknown fields on import.
+    function normalize(value) {
+      const root = clone(value);
+      const result = {...root,schema:1,revision:Number.isInteger(root.revision) ? root.revision : 0};
+      result.announcement = {...emptyNotice(),...root.announcement};
+      result.clouds = {...root.clouds};
+      for (const cloud of CLOUDS) result.clouds[cloud.key] = {enabled:true,message:'',expiresAt:'',...root.clouds?.[cloud.key]};
+      result.updates = {...root.updates};
+      for (const platform of PLATFORMS) result.updates[platform] = {...emptyUpdate(),...root.updates?.[platform]};
+      result.help = {enabled:false,url:'',...root.help};
+      result.about = {description:'',...root.about};
+      return result;
+    }
+
+    function https(value) {
+      if (typeof value !== 'string') return false;
+      const text = value.trim();
+      if (!text || text.length > 2048 || /[\s\x00-\x1f\x7f\\]/u.test(text)) return false;
+      if (!/^https:\/\/[^/?#]+(?:[/?#]|$)/i.test(text)) return false;
+      try {
+        const url = new URL(text);
+        return url.protocol === 'https:' && !!url.hostname && !url.username && !url.password &&
+          (!url.port || (Number(url.port) >= 1 && Number(url.port) <= 65535));
+      } catch (_) { return false; }
+    }
+
+    function validExpiry(value) {
+      if (typeof value !== 'string' || value.length > 32) return false;
+      const text = value.trim();
+      if (!text) return true;
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(text)) return false;
+      const date = new Date(text);
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0,19) === text.slice(0,19);
+    }
+    function utcToLocal(value) {
+      if (!validExpiry(value) || !value.trim()) return '';
+      const date = new Date(value.trim()), two = n => String(n).padStart(2,'0');
+      return `${String(date.getFullYear()).padStart(4,'0')}-${two(date.getMonth()+1)}-${two(date.getDate())}T${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3,'0')}`;
+    }
+    function localToUtc(value) {
+      if (!value) return '';
+      const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
+      if (!match) return value;
+      const date = new Date(value);
+      const parts = [date.getFullYear(),date.getMonth()+1,date.getDate(),date.getHours(),date.getMinutes(),date.getSeconds()];
+      if (!Number.isFinite(date.getTime()) || parts.some((n,i) => n !== Number(match[i+1] || 0))) return value;
+      return date.toISOString();
+    }
+
+    function validate(value) {
+      const errors = [];
+      const add = (path,message) => errors.push({path,message});
+      const block = (v,path) => {
+        if (object(v)) return v;
+        add(path,`${path || '配置'} 必须是 JSON 对象。`);
+        return null;
+      };
+      const str = (o,k,path,max) => {
+        if (!own(o,k)) return '';
+        if (typeof o[k] !== 'string' || o[k].length > max) {
+          add(path,`请填写不超过 ${max} 字的文本。`); return '';
+        }
+        return o[k].trim();
+      };
+      const bool = (o,k,path,fallback) => {
+        if (!own(o,k)) return fallback;
+        if (typeof o[k] !== 'boolean') { add(path,'开关必须是 true 或 false，不能是文字或数字。'); return false; }
+        return o[k];
+      };
+      const integer = (o,k,path,required=false,min=0) => {
+        if (!own(o,k) && !required) return 0;
+        const n = o[k];
+        if (!Number.isInteger(n) || n < min || n > MAX_INT) { add(path,`请填写 ${min}–${MAX_INT} 之间的整数。`); return 0; }
+        return n;
+      };
+      const link = (url,path,required=false) => { if ((url || required) && !https(url)) add(path,'请填写有效的 HTTPS 地址，不能包含空格或账号密码。'); };
+      const expiry = (o,path) => { if (own(o,'expiresAt') && !validExpiry(o.expiresAt)) add(path+'.expiresAt','结束时间必须为有效 UTC 日期，例如 2026-10-01T00:00:00Z。'); };
+      const root = block(value,'');
+      if (!root) return errors;
+      if (own(root,'announcement')) {
+        const a = block(root.announcement,'announcement');
+        if (a && bool(a,'enabled','announcement.enabled',false)) {
+          const title = str(a,'title','announcement.title',80);
+          const content = str(a,'content','announcement.content',8192);
+          const buttonText = str(a,'buttonText','announcement.buttonText',24);
+          const buttonUrl = str(a,'buttonUrl','announcement.buttonUrl',2048);
+          if (!!buttonText !== !!buttonUrl) add(buttonText ? 'announcement.buttonUrl' : 'announcement.buttonText','公告按钮的文字和地址需要同时填写，或同时留空。');
+          link(buttonUrl,'announcement.buttonUrl');
+          if (!title) add('announcement.title','启用公告时，请填写公告标题。');
+          if (!content) add('announcement.content','启用公告时，请填写公告正文。');
+        }
+      }
+      if (own(root,'clouds')) {
+        const clouds = block(root.clouds,'clouds');
+        if (clouds) for (const [key,value] of Object.entries(clouds)) {
+          if (!CLOUDS.some(c => c.key === key)) { add(`clouds.${key}`,`应用无法识别网盘名称“${key}”。`); continue; }
+          const c = block(value,`clouds.${key}`);
+          if (c && !bool(c,'enabled',`clouds.${key}.enabled`,true)) { str(c,'message',`clouds.${key}.message`,200); expiry(c,`clouds.${key}`); }
+        }
+      }
+      if (own(root,'updates')) {
+        const updates = block(root.updates,'updates');
+        if (updates) for (const platform of PLATFORMS) {
+          if (!own(updates,platform)) continue;
+          const path = `updates.${platform}`;
+          const u = block(updates[platform],path);
+          if (!u) continue;
+          const enabled = bool(u,'enabled',`${path}.enabled`,false);
+          if (!enabled) continue;
+          const force = bool(u,'force',`${path}.force`,false);
+          if (force) expiry(u,path);
+          const version = str(u,'version',`${path}.version`,64);
+          const build = integer(u,'build',`${path}.build`);
+          const url = str(u,'downloadUrl',`${path}.downloadUrl`,2048);
+          str(u,'notes',`${path}.notes`,8192);
+          link(url,`${path}.downloadUrl`);
+          if (enabled) {
+            if (!version) add(`${path}.version`,'启用更新时，请填写版本号。');
+            if (build < 1) add(`${path}.build`,'启用更新时，build 必须大于 0。');
+            if (!url) add(`${path}.downloadUrl`,'启用更新时，请填写下载地址。');
+          }
+        }
+      }
+      if (own(root,'help')) {
+        const h = block(root.help,'help');
+        if (h && bool(h,'enabled','help.enabled',false)) link(str(h,'url','help.url',2048),'help.url',true);
+      }
+      if (own(root,'about')) {
+        const a = block(root.about,'about');
+        if (a) str(a,'description','about.description',8192);
+      }
+      if (bytes(JSON.stringify(root,null,2) + '\n') > MAX_BYTES) add('','生成的配置文件超过 256 KiB，请减少内容。');
+      return errors.filter((error,index,all) => all.findIndex(e => e.path === error.path) === index);
+    }
+
+    function parse(text,{strict=true}={}) {
+      if (typeof text !== 'string') throw new Error('请选择或粘贴 UTF-8 JSON 文件。');
+      if (bytes(text) > MAX_BYTES) throw new Error('配置文件超过 256 KiB。');
+      text = text.replace(/^\uFEFF/,'');
+      let value;
+      try { value = JSON.parse(text); } catch (error) { throw new Error(`JSON 格式有误，请检查引号、逗号和括号。\n${error.message}`); }
+      // JSON.parse silently discards duplicate keys and integer spelling. Scan the
+      // original tokens so a bad online file is never silently "fixed" on import.
+      let pos = 0;
+      const ws = () => { while (/[\t\r\n ]/.test(text[pos] || 'x')) pos++; };
+      const string = () => {
+        const start = pos++;
+        while (pos < text.length) { if (text[pos] === '\\') pos += 2; else if (text[pos++] === '"') break; }
+        return JSON.parse(text.slice(start,pos));
+      };
+      function walk(path,depth) {
+        if (depth > 64) throw new Error('JSON 嵌套过深，请简化额外字段。');
+        ws();
+        if (text[pos] === '{') {
+          pos++; ws();
+          const keys = new Set();
+          while (text[pos] !== '}') {
+            ws(); const key = string();
+            const child = path ? `${path}.${key}` : key;
+            if (keys.has(key)) throw new Error(`存在重复字段：${child}。请只保留一项。`);
+            keys.add(key); ws(); pos++; walk(child,depth+1); ws();
+            if (text[pos] !== ',') break;
+            pos++;
+          }
+          pos++;
+        } else if (text[pos] === '[') {
+          pos++; ws(); let index = 0;
+          while (text[pos] !== ']') { walk(`${path}[${index++}]`,depth+1); ws(); if (text[pos] !== ',') break; pos++; }
+          pos++;
+        } else if (text[pos] === '"') { string(); }
+        else {
+          const start = pos;
+          while (pos < text.length && !/[\s,}\]]/.test(text[pos])) pos++;
+          const token = text.slice(start,pos);
+          const buildPlatform = PLATFORMS.find(p => path === `updates.${p}.build` && value.updates?.[p]?.enabled === true);
+          const integerField = buildPlatform;
+          if (integerField && /^-?\d/.test(token) && !/^-?(0|[1-9]\d*)$/.test(token)) {
+            if (strict || !buildPlatform) throw new Error(`${path} 必须直接填写整数，不能用小数或科学计数法。`);
+            // Keep a bad numeric spelling invalid in a comparison-only snapshot.
+            value.updates[buildPlatform].build = null;
+          }
+          if (/^-?\d/.test(token) && (!Number.isFinite(Number(token)) || (Number.isInteger(Number(token)) && !Number.isSafeInteger(Number(token))))) throw new Error(`${path} 的数字超出浏览器可安全编辑的范围。`);
+        }
+      }
+      walk('',0);
+      const errors = validate(value).filter(e => strict || e.path === '');
+      if (errors.length) throw new Error(errors.map(e => `${e.path ? e.path + '：' : ''}${e.message}`).join('\n'));
+      return value;
+    }
+
+    function canonical(value) {
+      if (Array.isArray(value)) return value.map(canonical);
+      if (object(value)) return Object.fromEntries(Object.keys(value).sort().map(k => [k,canonical(value[k])]));
+      return value;
+    }
+    function sameContent(a,b) {
+      const left = clone(a), right = clone(b);
+      delete left.revision; delete right.revision;
+      return JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
+    }
+    function syncAnnouncementId(config,checkpoint) {
+      const a = config.announcement, previous = checkpoint?.announcement;
+      const sameNotice = previous && ['enabled','title','content','buttonText','buttonUrl'].every(key => a[key] === previous[key]);
+      if (sameNotice) {
+        // Importing or reverting a notice preserves its wire representation. New
+        // clients also accept omitted IDs; old clients need a nonempty ID.
+        a.id = previous.id;
+        return;
+      }
+      if (!Number.isInteger(config.revision) || config.revision < 1) return;
+      a.id = `notice-auto-${config.revision}`;
+    }
+    function publicationErrors(config,checkpoint) {
+      return [];
+    }
+    function nextRevision(config,checkpoint) {
+      if (!checkpoint || !Number.isInteger(config.revision) || sameContent(config,checkpoint)) return config.revision;
+      return Math.min(MAX_INT, Math.max(config.revision,checkpoint.revision+1));
+    }
+    // Compare the app's active fields, including defaults for omitted sections.
+    // Revision comparisons only assist the optional legacy-client mode.
+    function effective(value) {
+      const c = normalize(value), trim = v => typeof v === 'string' ? v.trim() : '';
+      const end = v => trim(v) ? new Date(trim(v)).toISOString() : '';
+      const a = c.announcement;
+      return {
+        announcement:a.enabled ? Object.fromEntries(['id','title','content','buttonText','buttonUrl'].map(k => [k,trim(a[k])])) : null,
+        clouds:Object.fromEntries(CLOUDS.map(({key}) => { const v = c.clouds[key]; return [key,v.enabled ? {enabled:true} : {enabled:false,message:trim(v.message),expiresAt:end(v.expiresAt)}]; })),
+        updates:Object.fromEntries(PLATFORMS.map(p => { const v = c.updates[p]; return [p,v.enabled ? {version:trim(v.version),build:v.build,downloadUrl:trim(v.downloadUrl),notes:trim(v.notes),force:v.force,expiresAt:v.force ? end(v.expiresAt) : ''} : null]; })),
+        help:c.help.enabled ? trim(c.help.url) : null, about:trim(c.about.description)
+      };
+    }
+    function samePublishedContent(config,published) {
+      if (validate(config).length || validate(published).length) return false;
+      return JSON.stringify(canonical(effective(config))) === JSON.stringify(canonical(effective(published)));
+    }
+    function publishedErrors(config,published,minimumRevision=0) {
+      return [];
+    }
+    function nextPublishedRevision(config,published,minimumRevision=0) {
+      if (!published || !Number.isInteger(config.revision)) return config.revision;
+      const minimum = published.revision + (samePublishedContent(config,published) ? 0 : 1);
+      return Math.min(MAX_INT,Math.max(config.revision,minimum,minimumRevision));
+    }
+    function mergePublishedReference(previous,next,minimumRevision=0) {
+      return {published:next,minimumRevision:0};
+    }
+    async function fetchPublished(url,{fetcher=globalThis.fetch,timeoutMs=15000}={}) {
+      if (!https(url) || new URL(url.trim()).hash) throw new Error('配置入口必须为不带片段的 HTTPS 地址。');
+      const controller = new AbortController();
+      let timer, reader;
+      try {
+        return await Promise.race([
+          (async () => {
+            const response = await fetcher(url.trim(),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});
+            if (response.status !== 200 || (response.url && !https(response.url))) throw new Error('配置入口未返回完整的 HTTPS 文件。');
+            if (Number(response.headers.get('content-length')) > MAX_BYTES) throw new Error('线上文件超过 256 KiB。');
+            if (!response.body?.getReader) throw new Error('浏览器无法流式读取文件，请使用下载后的 JSON 核对。');
+            reader = response.body.getReader();
+            const chunks = []; let length = 0;
+            while (true) {
+              const {done,value} = await reader.read();
+              if (done) break;
+              length += value.byteLength;
+              if (length > MAX_BYTES) throw new Error('线上文件超过 256 KiB。');
+              chunks.push(value);
+            }
+            const bytes = new Uint8Array(length); let offset = 0;
+            for (const chunk of chunks) { bytes.set(chunk,offset); offset += chunk.byteLength; }
+            return parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes),{strict:false});
+          })(),
+          new Promise((_,reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error('线上核对超时，请重试或使用下载后的 JSON 核对。')); },timeoutMs); })
+        ]);
+      } finally { clearTimeout(timer); controller.abort(); if (reader) reader.cancel().catch(() => {}); }
+    }
+    function extras(config) {
+      const paths = [];
+      const visit = (o,keys,path='') => { if (object(o)) for (const key of Object.keys(o)) if (!keys.includes(key)) paths.push(path ? `${path}.${key}` : key); };
+      visit(config,['schema','revision','announcement','clouds','updates','help','about']);
+      visit(config.announcement,Object.keys(emptyNotice()),'announcement');
+      for (const c of CLOUDS) visit(config.clouds?.[c.key],['enabled','message','expiresAt'],`clouds.${c.key}`);
+      visit(config.updates,PLATFORMS,'updates');
+      for (const p of PLATFORMS) visit(config.updates?.[p],Object.keys(emptyUpdate()),`updates.${p}`);
+      visit(config.help,['enabled','url'],'help'); visit(config.about,['description'],'about');
+      return paths;
+    }
+    globalThis.WenxiConfig = Object.freeze({MAX_BYTES,MAX_INT,DEFAULT_URL,CLOUDS,PLATFORMS,DEFAULT_ABOUT,template,normalize,https,validate,parse,clone,bytes,sameContent,publicationErrors,nextRevision,syncAnnouncementId,extras,validExpiry,utcToLocal,localToUtc,samePublishedContent,publishedErrors,nextPublishedRevision,mergePublishedReference,fetchPublished});
+  })();
+  </script>
+  <script id="config-editor">
+  (() => {
+    'use strict';
+    const C = globalThis.WenxiConfig;
+    const $ = id => document.getElementById(id);
+    const STORAGE_KEY = 'wenxi.remote-config-editor.v1';
+    const sectionNames = ['announcement','clouds','updates','help'];
+    let config = C.template(), checkpoint = null, source = '本地模板 · 尚未导入配置';
+    let autoRevision = false, activeSection = 'announcement', previewPlatform = 'android';
+    let published = null, referenceUrl = C.DEFAULT_URL, referenceOrigin = '', referenceAt = null, referenceFloor = 0;
+    let liveBusy = false, liveConfirmed = false, liveMessage = '尚未核对线上版本。';
+    let draftTimer, toastTimer, storageAvailable = true, draftSaved = true, pendingCopy = null;
+    const get = path => path.split('.').reduce((o,k) => o?.[k],config);
+    const text = (id,value) => { $(id).textContent = value; };
+    const set = (path,value) => { const keys = path.split('.'); const key = keys.pop(); keys.reduce((o,k) => o[k],config)[key] = value; };
+    const plain = value => typeof value === 'string' ? value.trim() : '';
+
+    function toast(message,error=false) {
+      clearTimeout(toastTimer); text('toast',message); $('toast').classList.toggle('error',error); $('toast').hidden = false;
+      toastTimer = setTimeout(() => { $('toast').hidden = true; },5000);
+    }
+    function sectionFor(path) { return path.startsWith('about.') ? 'help' : sectionNames.find(s => path.startsWith(s)) || 'announcement'; }
+    function showSection(name,focus=false) {
+      if (!sectionNames.includes(name)) return;
+      activeSection = name;
+      document.querySelectorAll('[data-section]').forEach(button => { const active = button.dataset.section === name; button.setAttribute('aria-selected',String(active)); button.tabIndex = active ? 0 : -1; });
+      sectionNames.forEach(section => { $('section-'+section).hidden = section !== name; });
+      if (focus) $('tab-'+name).focus();
+    }
+    function syncFields() {
+      document.querySelectorAll('[data-path]').forEach(input => {
+        const value = get(input.dataset.path);
+        if (input.type === 'checkbox') input.checked = value === true;
+        else if (input.type === 'radio') input.checked = String(value) === input.value;
+        else if (input.type === 'datetime-local') input.value = C.utcToLocal(value ?? '');
+        else input.value = value ?? '';
+      });
+      $('auto-revision').checked = autoRevision;
+    }
+    function saveDraft() {
+      clearTimeout(draftTimer);
+      try {
+        localStorage.setItem(STORAGE_KEY,JSON.stringify({format:1,config,checkpoint,source,autoRevision,activeSection,published,referenceUrl,referenceOrigin,referenceAt,referenceFloor}));
+        storageAvailable = true; draftSaved = true;
+        text('draft-state','草稿已保存到此浏览器');
+      } catch (_) { storageAvailable = false; draftSaved = false; text('draft-state','无法保存草稿，请及时下载 JSON'); }
+    }
+    function scheduleSave() { draftSaved = false; text('draft-state',storageAvailable ? '正在保存草稿…' : '无法保存草稿，请及时下载 JSON'); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft,300); }
+    function applyAutoRevision() {
+      if (autoRevision) config.revision = C.nextRevision(config,checkpoint);
+      if (autoRevision) config.revision = C.nextPublishedRevision(config,published,referenceFloor);
+      C.syncAnnouncementId(config,checkpoint || (published && C.normalize(published)));
+      if (autoRevision) config.revision = C.nextPublishedRevision(config,published,referenceFloor);
+      $('field-revision').value = config.revision ?? '';
+    }
+    function changed(path) {
+      if (path !== 'revision') applyAutoRevision();
+      else C.syncAnnouncementId(config,checkpoint);
+      $('export-summary').hidden = true;
+      render(); scheduleSave();
+    }
+    function renderJson(json) {
+      const output = $('json-output');
+      if (json.length > 60000) { output.textContent = json; return; }
+      const fragment = document.createDocumentFragment();
+      const pattern = /"(?:\\.|[^"\\])*"(?=\s*:)|"(?:\\.|[^"\\])*"|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+      let end = 0;
+      for (const match of json.matchAll(pattern)) {
+        fragment.append(document.createTextNode(json.slice(end,match.index)));
+        const span = document.createElement('span');
+        span.className = match[0][0] === '"' ? (/^\s*:/.test(json.slice(match.index+match[0].length)) ? 'json-key' : 'json-string') : /^(true|false|null)$/.test(match[0]) ? 'json-bool' : 'json-number';
+        span.textContent = match[0]; fragment.append(span); end = match.index+match[0].length;
+      }
+      fragment.append(document.createTextNode(json.slice(end))); output.replaceChildren(fragment);
+    }
+    function issues() { return [...C.validate(config),...C.publicationErrors(config,checkpoint),...C.publishedErrors(config,published,referenceFloor)]; }
+    function warnings() {
+      const result = [];
+      if (!checkpoint) result.push('当前为本地模板。已有线上配置时，可先导入继续编辑。');
+      if (!liveConfirmed || !referenceAt || Date.now()-referenceAt > 5*60*1000) result.push('尚未完成最近 5 分钟内的线上核对；可先导出本地文件，提交前请再次联网核对。');
+      const restrictions = [...C.CLOUDS.map(c => [!config.clouds[c.key].enabled,config.clouds[c.key].expiresAt]),...C.PLATFORMS.map(p => [config.updates[p].enabled && config.updates[p].force,config.updates[p].expiresAt])];
+      if (restrictions.some(([active,end]) => active && !plain(end))) result.push('有维护停用或强制更新未填写结束时间：按该项最后校验起 7 天兼容，建议设置明确时间。');
+      if (restrictions.some(([active,end]) => active && plain(end) && C.validExpiry(end) && Date.parse(end) <= Date.now())) result.push('有结束时间已经到期，新客户端会自动解除对应限制。');
+      const a = config.announcement;
+      const links = [[a.enabled,a.buttonUrl],[config.help.enabled,config.help.url],...C.PLATFORMS.map(p => [config.updates[p].enabled,config.updates[p].downloadUrl])];
+      if (links.some(([enabled,url]) => enabled && C.https(url) && /(^|\.)example\.(com|org|net)$/.test(new URL(url.trim()).hostname))) result.push('仍有启用的链接指向 example 示例域名，发布前请换成真实地址。');
+      const extra = C.extras(config);
+      if (extra.length) result.push(`已保留 ${extra.length} 个额外字段：${extra.slice(0,3).join('、')}${extra.length > 3 ? '…' : ''}。当前应用只读取已有协议字段。`);
+      return result;
+    }
+    function renderValidation(errors) {
+      document.querySelectorAll('[data-path]').forEach(input => { input.removeAttribute('aria-invalid'); });
+      document.querySelectorAll('[data-error-for]').forEach(node => { node.hidden = true; });
+      const list = $('error-list'); list.replaceChildren();
+      for (const error of errors) {
+        const inputs = Array.from(document.querySelectorAll('[data-path]')).filter(input => input.dataset.path === error.path);
+        inputs.forEach(input => input.setAttribute('aria-invalid','true'));
+        const target = Array.from(document.querySelectorAll('[data-error-for]')).find(node => node.dataset.errorFor === error.path);
+        if (target) { target.textContent = error.message; target.hidden = false; }
+        const li = document.createElement('li'), button = document.createElement('button');
+        button.className = 'issue-link'; button.textContent = `${error.path ? error.path+'：' : ''}${error.message}`;
+        button.addEventListener('click',() => { if (error.path !== 'revision') showSection(sectionFor(error.path)); const input = inputs[0]; if (input) { input.focus(); input.scrollIntoView({block:'center',behavior:'auto'}); } });
+        li.append(button); list.append(li);
+      }
+      const warningList = $('warning-list'); warningList.replaceChildren();
+      for (const message of warnings()) { const li = document.createElement('li'); li.className = 'warning'; li.textContent = message; warningList.append(li); }
+      $('check-heading').classList.toggle('invalid',errors.length > 0);
+      text('check-title',errors.length ? `${errors.length} 处需要修改` : '配置检查通过');
+      text('check-subtitle',errors.length ? '点击下方问题可定位。修正后即可导出。' : '字段类型、链接与文件大小符合当前协议。');
+      document.querySelectorAll('[data-download],#copy-json').forEach(button => { button.disabled = liveBusy || errors.length > 0; });
+    }
+    function renderPreviews() {
+      const a = config.announcement;
+      text('notice-preview-title',plain(a.title) || '文析助手公告');
+      text('notice-preview-content',plain(a.content) || '填写正文后，可在这里预览。');
+      text('notice-preview-state',a.enabled ? '已启用 · 用户可选择当天免打扰' : '当前未启用 · 仅预览内容');
+      $('notice-preview-button').hidden = !plain(a.buttonText) || !C.https(a.buttonUrl);
+      text('notice-preview-button',plain(a.buttonText));
+      const u = config.updates[previewPlatform];
+      text('update-preview-title',u.force ? '请更新后继续使用' : '发现新版本');
+      text('update-preview-meta',`${previewPlatform === 'android' ? 'Android' : 'Windows'} · ${plain(u.version) || '版本号待填写'} · build ${u.build ?? '—'}`);
+      text('update-preview-notes',plain(u.notes) || '填写更新说明后，可在这里预览。');
+      $('update-preview-ignore').hidden = u.force;
+      text('update-preview-close',u.force ? '重新检查' : '暂不更新');
+      text('update-preview-download',u.force ? '立即更新' : '前往下载');
+      text('update-preview-state',!u.enabled ? '当前平台未启用更新，此处仅预览内容。' : u.force ? '强制更新：不可关闭或忽略，可重新检查配置。' : '普通更新：可以关闭或忽略当前版本。');
+      text('about-preview',plain(config.about.description) || C.DEFAULT_ABOUT);
+    }
+    function render() {
+      const json = JSON.stringify(config,null,2);
+      renderJson(json); text('json-size',`${(C.bytes(json+'\n')/1024).toFixed(2)} / 256 KiB`);
+      text('source-state',source);
+      text('live-status',liveMessage);
+      $('check-live').disabled = liveBusy; $('live-url').disabled = liveBusy;
+      text('check-live',liveBusy ? '正在核对…' : '核对线上修订号');
+      document.querySelectorAll('[data-expiry-section]').forEach(input => {
+        const path = input.dataset.expirySection;
+        input.disabled = path.startsWith('clouds.') ? get(path+'.enabled') === true : get(path+'.enabled') !== true || get(path+'.force') !== true;
+      });
+      text('revision-context',autoRevision ? '已启用旧客户端兼容：修改内容时自动递增修订号。' : '新版应用直接使用获取到的内容，无需修改修订号或公告 ID。');
+      document.querySelectorAll('[data-toggle-text]').forEach(node => { node.textContent = get(node.dataset.toggleText) ? '已开启' : '已关闭'; });
+      document.querySelectorAll('[data-count-for]').forEach(node => { node.textContent = `${String(get(node.dataset.countFor) ?? '').length} / ${node.dataset.limit}`; });
+      for (const c of C.CLOUDS) { $('cloud-'+c.key).classList.toggle('paused',!config.clouds[c.key].enabled); }
+      const open = C.CLOUDS.filter(c => config.clouds[c.key].enabled).length;
+      text('cloud-summary',open === C.CLOUDS.length ? `${C.CLOUDS.length} 个网盘全部开放` : `${open} 个开放 · ${C.CLOUDS.length-open} 个暂停服务`);
+      for (const p of C.PLATFORMS) {
+        const u = config.updates[p];
+        text('build-hint-'+p,Number.isInteger(u.build) && u.build > 0 ? `只有已安装 build 小于 ${u.build} 的用户会收到这次更新。` : '填写安装包真实构建号，例如 pubspec.yaml 中 + 后的数字。');
+      }
+      renderValidation(issues()); renderPreviews();
+    }
+    function expiryField(path,label) {
+      const id = 'field-'+path.replaceAll('.','-')+'-expiresAt';
+      return `<div class="field" style="margin-top:12px"><label for="${id}">${label} <small>设备本地时间</small></label><input id="${id}" type="datetime-local" step="0.001" data-path="${path}.expiresAt" data-expiry-section="${path}"><p class="hint">导出为 UTC 时间。留空按该项最后校验起 7 天兼容；建议填写明确结束时间。</p></div>`;
+    }
+    function mountFields() {
+      // These templates contain only fixed labels; imported text is always assigned
+      // through value/textContent, never interpolated into HTML.
+      $('cloud-fields').innerHTML = C.CLOUDS.map(c => `<div class="cloud-item" id="cloud-${c.key}"><div class="cloud-head"><span class="cloud-symbol" style="--cloud-color:${c.color};--cloud-tint:${c.tint}">${c.short}</span><span class="cloud-name">${c.name}</span><label class="switch-label"><span class="switch"><input type="checkbox" data-path="clouds.${c.key}.enabled" aria-label="启用${c.name}"><span class="switch-track"></span></span><span data-toggle-text="clouds.${c.key}.enabled"></span></label></div><div class="field"><label for="field-clouds-${c.key}-message">停用时显示的说明</label><textarea id="field-clouds-${c.key}-message" data-path="clouds.${c.key}.message" rows="2" maxlength="200" placeholder="留空使用默认停用提示"></textarea></div>${expiryField(`clouds.${c.key}`,'停用结束时间')}</div>`).join('');
+      $('update-fields').innerHTML = C.PLATFORMS.map(p => {
+        const name = p === 'android' ? 'Android' : 'Windows', path = `updates.${p}`;
+        return `<div class="card"><div class="card-head"><div><h2><span class="platform-icon">${p === 'android' ? 'A' : 'W'}</span>${name}</h2><p>${name} 客户端的版本更新提醒。</p></div><label class="switch-label"><span class="switch"><input type="checkbox" data-path="${path}.enabled" aria-label="启用 ${name} 更新"><span class="switch-track"></span></span><span data-toggle-text="${path}.enabled"></span></label></div><div class="card-body stack"><fieldset class="policy"><legend>提醒方式</legend><div class="policy-options"><label class="policy-option"><input type="radio" name="policy-${p}" data-path="${path}.force" value="false"><span><strong>普通更新</strong><small>可关闭，可忽略此版本</small></span></label><label class="policy-option"><input type="radio" name="policy-${p}" data-path="${path}.force" value="true"><span><strong>强制更新</strong><small>更新后才可继续使用</small></span></label></div></fieldset>${expiryField(path,'强制更新结束时间')}<div><div class="form-row version-row"><div class="field"><label for="field-updates-${p}-version">版本号 <small>展示文字</small></label><input id="field-updates-${p}-version" data-path="${path}.version" maxlength="64" placeholder="例如 0.5.0"></div><div class="field"><label for="field-updates-${p}-build">构建号 <small>build</small></label><input id="field-updates-${p}-build" data-path="${path}.build" type="number" min="0" max="2147483647" step="1" placeholder="例如 53"></div></div><p class="build-hint" id="build-hint-${p}"></p></div><div class="field"><label for="field-updates-${p}-downloadUrl">下载地址</label><input id="field-updates-${p}-downloadUrl" data-path="${path}.downloadUrl" type="url" maxlength="2048" placeholder="https://…" spellcheck="false"><p class="hint">可填安装包地址或发布页面，点击后由系统浏览器打开。</p></div><div class="field"><label for="field-updates-${p}-notes">更新说明</label><textarea id="field-updates-${p}-notes" data-path="${path}.notes" rows="4" maxlength="8192" placeholder="填写这个平台的更新内容，支持多行。"></textarea><span class="count" data-count-for="${path}.notes" data-limit="8192"></span></div><p class="hint">普通更新关闭后，下次完整启动仍提醒；忽略后，发布更大的 build 才会再次提醒。强制更新会覆盖忽略记录。</p></div></div>`;
+      }).join('');
+      document.querySelectorAll('.field [data-path]').forEach(input => {
+        const path = input.dataset.path, field = input.closest('.field');
+        if (field.querySelector('[data-error-for]')) return;
+        const error = document.createElement('p'); error.className = 'field-error'; error.dataset.errorFor = path; error.hidden = true; error.id = 'error-'+path.replaceAll('.','-');
+        field.append(error); input.setAttribute('aria-describedby',error.id);
+      });
+    }
+    function importConfig(raw,label) {
+      const imported = C.normalize(C.parse(raw));
+      const errors = C.validate(imported);
+      if (errors.length) throw new Error(errors.map(e => `${e.path}：${e.message}`).join('\n'));
+      config = imported; checkpoint = C.clone(imported); source = `已导入：${label}`;
+      applyAutoRevision(); $('export-summary').hidden = true; syncFields(); render(); saveDraft();
+      toast(`已导入 revision ${config.revision}。修改内容后可生成新的 config.json。`);
+    }
+    function exportSnapshot() {
+      if (liveBusy) { toast('正在核对线上修订号，请等待完成后导出。',true); return null; }
+      if (issues().length) { toast('请先修正配置中的问题，再导出。',true); return null; }
+      return {data:C.clone(config),json:JSON.stringify(config,null,2)+'\n'};
+    }
+    function exported(snapshot,method) {
+      checkpoint = C.clone(snapshot.data); applyAutoRevision(); render(); saveDraft();
+      text('export-summary',`${method} revision ${snapshot.data.revision}。替换并提交到 Gitee 后，应用才会收到这份配置。`);
+      $('export-summary').hidden = false;
+    }
+    function download() {
+      const snapshot = exportSnapshot(); if (!snapshot) return;
+      const url = URL.createObjectURL(new Blob([snapshot.json],{type:'application/json;charset=utf-8'}));
+      const a = document.createElement('a'); a.href = url; a.download = 'config.json'; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url),1500);
+      exported(snapshot,'已生成下载'); toast('已生成 config.json，请将完整文件替换到 Gitee。');
+    }
+    async function copy() {
+      const snapshot = exportSnapshot(); if (!snapshot) return;
+      let copied = false;
+      try { if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(snapshot.json); copied = true; } } catch (_) { /* File URLs may not have clipboard permission. */ }
+      if (!copied) {
+        const scratch = document.createElement('textarea'); scratch.value = snapshot.json; scratch.setAttribute('aria-label','复制 JSON'); scratch.style.cssText = 'position:fixed;left:-9999px;top:0';
+        const previous = document.activeElement; document.body.append(scratch); scratch.select();
+        try { copied = document.execCommand('copy'); } catch (_) { copied = false; }
+        scratch.remove(); previous?.focus();
+      }
+      if (copied) { exported(snapshot,'已复制'); toast('完整 JSON 已复制，可粘贴到 Gitee 的 config.json。'); }
+      else { pendingCopy = snapshot; $('manual-copy').value = snapshot.json; $('copy-dialog').showModal(); $('manual-copy').focus(); $('manual-copy').select(); }
+    }
+    function restoreDraft() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+        const draft = JSON.parse(raw);
+        // An unfinished numeric input may be null, so recover editable drafts even
+        // when publication validation is not yet satisfied.
+        if (draft.format !== 1 || draft.config?.schema !== 1) return;
+        const recovered = C.normalize(draft.config);
+        config = recovered;
+        checkpoint = draft.checkpoint && !C.validate(draft.checkpoint).length ? C.normalize(draft.checkpoint) : null;
+        source = typeof draft.source === 'string' ? draft.source.slice(0,180) : '已恢复本地草稿';
+        autoRevision = draft.autoRevision !== false;
+        activeSection = sectionNames.includes(draft.activeSection) ? draft.activeSection : 'announcement';
+        if (C.https(draft.referenceUrl) && !new URL(draft.referenceUrl).hash) referenceUrl = draft.referenceUrl;
+        $('live-url').value = referenceUrl;
+        if (draft.published) {
+          try {
+            published = C.parse(JSON.stringify(draft.published),{strict:false});
+            referenceOrigin = draft.referenceOrigin === 'live' ? 'live' : 'manual';
+            referenceAt = Number.isFinite(draft.referenceAt) ? draft.referenceAt : null;
+            referenceFloor = Number.isInteger(draft.referenceFloor) && draft.referenceFloor <= C.MAX_INT+1 ? Math.max(draft.referenceFloor,published.revision) : published.revision;
+            liveMessage = `上次核对 revision ${published.revision}；发布前请重新核对线上文件。`;
+          } catch (_) { published = null; referenceFloor = 0; liveMessage = '上次核对记录无法读取，请重新核对线上文件。'; }
+        }
+        text('draft-state','已恢复此浏览器的草稿');
+      } catch (_) { toast('上次草稿无法读取，已打开空白模板。',true); }
+    }
+
+    function acceptReference(value,origin) {
+      const merged = C.mergePublishedReference(published,value,referenceFloor);
+      published = merged.published; referenceFloor = merged.minimumRevision;
+      referenceOrigin = origin; referenceAt = Date.now(); liveConfirmed = origin === 'live';
+      const invalid = C.validate(value);
+      liveMessage = `${origin === 'live' ? '已联网核对' : '已核对下载副本'} · ${new Date(referenceAt).toLocaleTimeString()}${invalid.length ? `；请修正线上字段：${invalid.slice(0,3).map(e=>e.path).join('、')}。` : '。'}新版应用按获取到的内容更新。`;
+      applyAutoRevision(); syncFields(); render(); saveDraft();
+    }
+    async function checkLive() {
+      if (liveBusy) return;
+      liveBusy = true; liveConfirmed = false; liveMessage = '正在读取线上配置，最长等待 15 秒…'; render();
+      try { acceptReference(await C.fetchPublished(referenceUrl),'live'); }
+      catch (error) { liveMessage = `线上核对未完成：${error instanceof TypeError ? '网络或浏览器跨域限制阻止了读取。' : error.message} 可用刚下载的线上 JSON 核对，或使用项目中的发布校验命令。`; }
+      finally { liveBusy = false; render(); }
+    }
+
+    mountFields(); restoreDraft(); syncFields(); showSection(activeSection); render(); saveDraft();
+    document.addEventListener('input',event => {
+      const input = event.target;
+      if (!input.matches('[data-path]')) return;
+      let value = input.type === 'checkbox' ? input.checked : input.type === 'radio' ? input.value === 'true' : input.type === 'number' ? (input.value === '' ? null : Number(input.value)) : input.value;
+      if (input.type === 'datetime-local') value = C.localToUtc(input.value);
+      if (input.type === 'radio' && !input.checked) return;
+      set(input.dataset.path,value); changed(input.dataset.path);
+    });
+    document.querySelectorAll('[data-section]').forEach(button => { button.addEventListener('click',() => { showSection(button.dataset.section); window.scrollTo({top:0,behavior:'auto'}); scheduleSave(); }); });
+    document.querySelector('.nav').addEventListener('keydown',event => {
+      const index = sectionNames.indexOf(activeSection);
+      let next;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index+1)%sectionNames.length;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index+sectionNames.length-1)%sectionNames.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = sectionNames.length-1;
+      if (next !== undefined) { event.preventDefault(); showSection(sectionNames[next],true); window.scrollTo({top:0,behavior:'auto'}); scheduleSave(); }
+    });
+    $('auto-revision').addEventListener('change',() => { autoRevision = $('auto-revision').checked; applyAutoRevision(); render(); scheduleSave(); });
+    $('bump-revision').addEventListener('click',() => {
+      if (config.revision === C.MAX_INT) { toast('修订号已达到协议允许的最大值。',true); return; }
+      const current = Number.isInteger(config.revision) ? config.revision : checkpoint?.revision ?? 0;
+      config.revision = Math.min(C.MAX_INT,Math.max(1,current+1)); $('field-revision').value = config.revision; changed('revision');
+    });
+    $('enable-all-clouds').addEventListener('click',() => { C.CLOUDS.forEach(c => { config.clouds[c.key].enabled = true; }); syncFields(); changed('clouds'); });
+    document.querySelectorAll('[data-preview-platform]').forEach(button => { button.addEventListener('click',() => { previewPlatform = button.dataset.previewPlatform; document.querySelectorAll('[data-preview-platform]').forEach(b => b.setAttribute('aria-pressed',String(b === button))); renderPreviews(); }); });
+    document.querySelectorAll('[data-download]').forEach(button => { button.addEventListener('click',download); });
+    $('copy-json').addEventListener('click',copy);
+    $('live-url').addEventListener('input',() => { referenceUrl = $('live-url').value.trim(); published = null; referenceAt = null; referenceOrigin = ''; referenceFloor = 0; liveConfirmed = false; liveMessage = '入口已改变，请重新核对。'; render(); scheduleSave(); });
+    $('check-live').addEventListener('click',checkLive);
+    $('reference-open').addEventListener('click',() => { $('reference-error').hidden = true; $('reference-dialog').showModal(); $('reference-text').focus(); });
+    $('apply-reference').addEventListener('click',() => {
+      try { acceptReference(C.parse($('reference-text').value,{strict:false}),'manual'); $('reference-dialog').close(); $('reference-text').value = ''; }
+      catch (error) { text('reference-error',error.message); $('reference-error').hidden = false; }
+    });
+    $('paste-open').addEventListener('click',() => { $('import-error').hidden = true; $('import-dialog').showModal(); $('import-text').focus(); });
+    $('apply-import').addEventListener('click',() => {
+      try { importConfig($('import-text').value,'粘贴的 JSON'); $('import-dialog').close(); $('import-text').value = ''; }
+      catch (error) { text('import-error',error.message); $('import-error').hidden = false; }
+    });
+    $('import-open').addEventListener('click',() => { $('import-file').value = ''; $('import-file').click(); });
+    $('import-file').addEventListener('change',async () => {
+      const file = $('import-file').files[0]; if (!file) return;
+      try {
+        if (file.size > C.MAX_BYTES) throw new Error('配置文件超过 256 KiB。');
+        let raw;
+        try { raw = new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer()); } catch (_) { throw new Error('文件无法按 UTF-8 读取，请另存为 UTF-8 JSON。'); }
+        importConfig(raw,file.name);
+      } catch (error) { $('import-text').value = ''; text('import-error',error.message); $('import-error').hidden = false; $('import-dialog').showModal(); }
+    });
+    document.querySelectorAll('[data-close-dialog]').forEach(button => { button.addEventListener('click',() => $(button.dataset.closeDialog).close()); });
+    document.querySelectorAll('dialog').forEach(dialog => { dialog.addEventListener('click',event => { if (event.target === dialog) { const box = dialog.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close(); } }); });
+    $('select-copy').addEventListener('click',() => { $('manual-copy').focus(); $('manual-copy').select(); });
+    $('finish-copy').addEventListener('click',() => { if (pendingCopy) exported(pendingCopy,'已确认手动复制'); pendingCopy = null; $('copy-dialog').close(); });
+    $('copy-dialog').addEventListener('close',() => { pendingCopy = null; });
+    ['new-config','new-config-footer'].forEach(id => { $(id).addEventListener('click',() => $('new-dialog').showModal()); });
+    $('confirm-new').addEventListener('click',() => { config = C.template(); checkpoint = null; source = '本地模板 · 尚未导入配置'; $('export-summary').hidden = true; syncFields(); showSection('announcement'); render(); saveDraft(); $('new-dialog').close(); toast('已新建空白配置。已有线上文件时，建议先导入。'); });
+    document.addEventListener('keydown',event => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && !document.querySelector('dialog[open]')) { event.preventDefault(); download(); } });
+    const mobileNav = matchMedia('(max-width:700px)');
+    const navOrientation = () => document.querySelector('.nav').setAttribute('aria-orientation',mobileNav.matches ? 'horizontal' : 'vertical');
+    mobileNav.addEventListener('change',navOrientation); navOrientation();
+    window.addEventListener('pagehide',saveDraft);
+    window.addEventListener('beforeunload',event => { if (!draftSaved) saveDraft(); if (!storageAvailable && !draftSaved) { event.preventDefault(); event.returnValue = ''; } });
+  })();
+  </script>
+</body>
+</html>

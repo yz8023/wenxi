@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "revision": 1,
+  "announcement": {
+    "enabled": false,
+    "id": "notice-auto-1",
+    "title": "文析助手公告",
+    "content": "",
+    "buttonText": "",
+    "buttonUrl": ""
+  },
+  "clouds": {
+    "baidu": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "quark": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "uc": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "pan123": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "c139": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "tianyi": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "xunlei": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "lanzou": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "guangya": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "aliyun": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "ilanzou": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "weiyun": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "pan115": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    },
+    "wopan": {
+      "enabled": true,
+      "message": "",
+      "expiresAt": ""
+    }
+  },
+  "updates": {
+    "android": {
+      "enabled": false,
+      "force": false,
+      "version": "1.0.7",
+      "build": 107,
+      "downloadUrl": "",
+      "notes": "",
+      "expiresAt": ""
+    },
+    "windows": {
+      "enabled": false,
+      "force": false,
+      "version": "1.0.7",
+      "build": 107,
+      "downloadUrl": "",
+      "notes": "",
+      "expiresAt": ""
+    }
+  },
+  "help": {
+    "enabled": false,
+    "url": ""
+  },
+  "about": {
+    "description": "网盘文件管理与 Gopeed 下载器\nAndroid · Windows"
+  }
+}

@@ -1,0 +1,85 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+/test/failures/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/build/
+/android/.kotlin/
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Generated Android plugin caches and reports.
+**/.gradle/
+**/.cxx/
+/vendor_plugins/*/android/build/
+
+.local/
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+native/bin/
+native/.tools/
+
+# Local accounts, diagnostics, reference material and release outputs.
+/logs/
+/logs.zip
+/*-logs-*.zip
+/*-backup-*.json
+/logo/
+/releases/
+/caiiliao/
+/演示截图/
+/LanzouAPI-master.zip
+/control.json
+/config.fixed.json
+/docs/*.json
+!/docs/kotlin-baseline-sha256.json
+/android/app/libs/*.aar
+/android/app/libs/*-sources.jar
+.env
+.env.*
+!.env.example
+__pycache__/
+
+

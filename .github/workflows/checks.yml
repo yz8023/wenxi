@@ -1,0 +1,48 @@
+name: Source checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      PUB_HOSTED_URL: https://pub.dev
+      FLUTTER_STORAGE_BASE_URL: https://storage.googleapis.com
+      GOPROXY: https://proxy.golang.org,direct
+      GOTOOLCHAIN: go1.24.7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Check staged source, versions and release tools
+        run: |
+          python tool/check_public_files.py --staged
+          dart tool/sync_version.dart --check
+          python -m unittest discover -s tool/tests -p 'test_*.py'
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Check build configuration handling
+        shell: pwsh
+        run: ./tool/tests/build-config.test.ps1
+      - name: Analyze Flutter
+        run: flutter analyze --no-pub
+      - name: Build the native helper used by integration tests
+        shell: pwsh
+        run: ./tool/build-native-windows.ps1
+      - name: Test Flutter
+        run: flutter test --no-pub --concurrency=1 --reporter expanded
+      - name: Test browser scripts and configuration editor
+        run: |
+          flutter test --no-pub tool/login_web_scripts_test.dart --reporter expanded
+          node --test tool/remote-control-editor.test.cjs
+      - name: Test the native download core
+        working-directory: native/gopeed
+        env:
+          CGO_ENABLED: '0'
+        run: go test -mod=vendor -tags nosqlite -ldflags=-checklinkname=0 ./bind/asterlink ./internal/protocol/http ./internal/btpolicy -count=1 -timeout=180s

@@ -1,0 +1,29 @@
+{
+  "test/fixtures/legacy-jvm-backup.json": {
+    "sha256": "aa40ad3cbb43f1f17fab84b8dc27a1183ac027102b14f7a08eac5e0425c79c2e",
+    "rules": [
+      "account-backup-content"
+    ],
+    "reason": "Decrypted and reviewed JVM compatibility vector: fixture/test-only credentials, fixture UUID and a repeated-character device ID. See test/fixtures/README.md."
+  },
+  "test/remote_control_resilience_test.dart": {
+    "sha256": "f3fd7e78e091e3440cc6d85a4b2bf30a3f09e15fcf72e2174ce76ed8762f8027",
+    "reason": "Synthetic credential-bearing URLs on reserved example/test hosts exercise rejection of unsafe URLs."
+  },
+  "test/remote_control_test.dart": {
+    "sha256": "0ad4ea8e80ed0f1707581faf7dcd71297eaabd376ef3e7d55b7ca487579da951",
+    "reason": "Synthetic credential-bearing URLs on reserved example/test hosts exercise rejection of unsafe URLs."
+  },
+  "test/tianyi_test.dart": {
+    "sha256": "045b6c55bdb923e022b4de00a6b877f1058b6579fb13149f0b38b1fdf9977ad4",
+    "reason": "Synthetic credential-bearing URLs on reserved example/test hosts exercise rejection of unsafe URLs."
+  },
+  "test/uc_tv_test.dart": {
+    "sha256": "74f8e4383aa3636ec306e43f4483be55832eb784e163189da306a3c803e12993",
+    "reason": "Synthetic credential-bearing URLs on reserved example/test hosts exercise rejection of unsafe URLs."
+  },
+  "tool/remote-control-editor.test.cjs": {
+    "sha256": "d24e417fa942684e2e8c80ac3de0443fb3869e604aec5eb02d1cb9f79f23629b",
+    "reason": "Synthetic credential-bearing URLs on reserved example/test hosts exercise rejection of unsafe URLs."
+  }
+}

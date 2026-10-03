@@ -1,0 +1,64 @@
+name: CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+  build:
+    needs: checks
+    runs-on: windows-2022
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [android, windows]
+    env:
+      PUB_HOSTED_URL: https://pub.dev
+      FLUTTER_STORAGE_BASE_URL: https://storage.googleapis.com
+      GOPROXY: https://proxy.golang.org,direct
+      GOTOOLCHAIN: go1.24.7
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          android: ${{ matrix.target == 'android' && 'true' || 'false' }}
+      - name: Install pinned Android SDK components
+        if: matrix.target == 'android'
+        run: |
+          $sdkmanager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat'
+          & $sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+          if ($LASTEXITCODE -ne 0) { throw 'Android SDK installation failed.' }
+      - name: Build and inspect Android without signing secrets
+        if: matrix.target == 'android'
+        run: |
+          ./tool/build-android.ps1 -BuildConfig config/build.community.json -Unsigned
+          python tool/verify_apk.py --apk build/app/outputs/flutter-apk/app-release.apk --sdk $env:ANDROID_HOME --unsigned --application-id com.asterlink.app.community --umeng-channel community --output .local/ci-apk-inspection.json
+          if ($LASTEXITCODE -ne 0) { throw 'APK inspection failed.' }
+      - name: Test Android release code
+        if: matrix.target == 'android'
+        env:
+          ORG_GRADLE_PROJECT_ASTERLINK_UNSIGNED: 'true'
+          ORG_GRADLE_PROJECT_ASTERLINK_APPLICATION_ID: com.asterlink.app.community
+          ORG_GRADLE_PROJECT_UMENG_CHANNEL: community
+        run: |
+          $env:GRADLE_USER_HOME = Join-Path $env:GITHUB_WORKSPACE '.local/gradle-home'
+          & ./android/gradlew.bat -p android :app:testReleaseUnitTest -Ptarget-platform=android-arm64 --no-daemon
+          if ($LASTEXITCODE -ne 0) { throw 'Android unit tests failed.' }
+      - name: Build Windows from source
+        if: matrix.target == 'windows'
+        run: ./tool/build-windows.ps1 -BuildConfig config/build.community.json

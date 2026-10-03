@@ -1,0 +1,62 @@
+[
+  {
+    "pathStyle": false,
+    "method": "PUT",
+    "url": "https://bucket.s3.example.test/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt",
+    "signature": "2a1fd58f93101d78011a9290fc492efc0a1c6ca22cf0f66fdf4a9419c7b9f7f1"
+  },
+  {
+    "pathStyle": false,
+    "method": "POST",
+    "url": "https://bucket.s3.example.test/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?uploads=",
+    "signature": "3114306892dca5ecb55c5b61e98e4ec9032db5bf01a6b883a28e78e8e1470444"
+  },
+  {
+    "pathStyle": false,
+    "method": "PUT",
+    "url": "https://bucket.s3.example.test/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?partNumber=1&uploadId=upload%2Fid%2B%3D",
+    "signature": "0e2e3be716fcffb2f4b3f53d7c16e0723dd7d6fb0abaa2ba0d69d99747216d03"
+  },
+  {
+    "pathStyle": false,
+    "method": "PUT",
+    "url": "https://bucket.s3.example.test/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?partNumber=2&uploadId=upload%2Fid%2B%3D",
+    "signature": "3e3e027791b6204286deb92dbb3cb449e421797b61bef94d03a2ac43f640906c"
+  },
+  {
+    "pathStyle": false,
+    "method": "POST",
+    "url": "https://bucket.s3.example.test/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?uploadId=upload%2Fid%2B%3D",
+    "signature": "13c17ad13e4d5a9edc64d5eab8e4d361d39ecca808c91ac03fac2db5ece37a30"
+  },
+  {
+    "pathStyle": true,
+    "method": "PUT",
+    "url": "https://s3.example.test/bucket/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt",
+    "signature": "4d076793b41033e5f7a42b495a8e6be86945483967a4caef3f12637e3d642857"
+  },
+  {
+    "pathStyle": true,
+    "method": "POST",
+    "url": "https://s3.example.test/bucket/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?uploads=",
+    "signature": "672eb03c7c199764fd2480f1d856c5eddb550f9a85d1096588744edae3f2d5ea"
+  },
+  {
+    "pathStyle": true,
+    "method": "PUT",
+    "url": "https://s3.example.test/bucket/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?partNumber=1&uploadId=upload%2Fid%2B%3D",
+    "signature": "eb0f97d7a831b8ddcb3a825a9beaeff80c1ade875b360fd5765db96eb2689cba"
+  },
+  {
+    "pathStyle": true,
+    "method": "PUT",
+    "url": "https://s3.example.test/bucket/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?partNumber=2&uploadId=upload%2Fid%2B%3D",
+    "signature": "28ec6f57e0ab94eee2bee09d1ea93ffc51da1049ac861c7ec65b0f418c5b469f"
+  },
+  {
+    "pathStyle": true,
+    "method": "POST",
+    "url": "https://s3.example.test/bucket/folder/%E6%B5%8B%E8%AF%95%20%2B%25.txt?uploadId=upload%2Fid%2B%3D",
+    "signature": "e1663944af120ecbd744130ee1e7a3e543b7f6a48e6ba734cb715f496a1bd8da"
+  }
+]

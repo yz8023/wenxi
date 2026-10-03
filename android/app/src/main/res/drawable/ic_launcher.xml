@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from the user-provided cloud/document artwork. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/app_icon_legacy"
+    android:gravity="fill" android:filter="true" android:antialias="true" />

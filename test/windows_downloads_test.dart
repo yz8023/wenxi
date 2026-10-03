@@ -1,0 +1,134 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:asterlink/app_services.dart';
+import 'package:asterlink/data/state_store.dart';
+import 'package:asterlink/domain/downloads.dart';
+import 'package:asterlink/domain/models.dart';
+import 'package:asterlink/main.dart';
+import 'package:asterlink/platform/windows_actions.dart';
+import 'package:asterlink/ui/downloads_page.dart';
+import 'package:asterlink/ui/player_page.dart';
+import 'support.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+    'Windows videos play directly and other files open Explorer',
+    (tester) async {
+      final calls = <(String, List<String>)>[];
+      final played = <String>[];
+      final root = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp('wenxi-download-ui-'),
+      ))!;
+      final path = p.join(root.path, '视频 (1).mp4');
+      final document = p.join(root.path, '说明.txt');
+      await tester.runAsync(() => File(path).writeAsString('fixture'));
+      await tester.runAsync(() => File(document).writeAsString('fixture'));
+      final services = (await tester.runAsync(() async {
+        final services = AppServices(
+          controlEnabled: false,
+          store: StateStore.memory({
+            'tasks': [
+              DownloadTask(
+                id: 'document',
+                spec: const DownloadSpec(
+                  url: 'https://example.invalid/doc',
+                  fileName: '说明.txt',
+                ),
+                createdAt: 3,
+                status: DownloadStatus.completed,
+                savedPath: document,
+              ).toJson(),
+              DownloadTask(
+                id: 'saved',
+                spec: const DownloadSpec(
+                  url: 'https://example.invalid/a',
+                  fileName: '视频 (1).mp4',
+                ),
+                createdAt: 2,
+                status: DownloadStatus.completed,
+                savedPath: path,
+              ).toJson(),
+              const DownloadTask(
+                id: 'pending',
+                spec: DownloadSpec(
+                  url: 'https://example.invalid/b',
+                  fileName: '未完成.mp4',
+                ),
+                createdAt: 1,
+                status: DownloadStatus.paused,
+              ).toJson(),
+            ],
+          }),
+          dataDirectory: root,
+          cacheDirectory: Directory(p.join(root.path, 'cache')),
+          transport: FakeNative(),
+          files: FakeFiles(Directory(p.join(root.path, 'saved'))),
+          http: FakeHttp(),
+          platformFeatures: false,
+          windowsActions: WindowsActions(
+            supported: true,
+            start: (command, arguments) async =>
+                calls.add((command, arguments)),
+            run: (_, _) async =>
+                fail('Widget must not really request shutdown'),
+          ),
+        );
+        await services.downloads.initialize();
+        return services;
+      }))!;
+      try {
+        tester.view.physicalSize = const Size(1100, 780);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: appTheme(Brightness.light),
+            home: Scaffold(
+              body: DownloadsPage(
+                services,
+                onPlay: (task) async => played.add(task.id),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('下载完成后关机'), findsOneWidget);
+        expect(services.downloadShutdown.enabled, isFalse);
+        await tester.runAsync(() async {
+          await tester.tap(find.byTooltip('打开文件'));
+          await until(() => calls.isNotEmpty);
+        });
+        await tester.pumpAndSettle();
+        expect(calls.single.$1, 'explorer.exe');
+        expect(calls.single.$2, ['/select,', document]);
+        expect(find.byType(PlayerPage), findsNothing);
+        await tester.tap(find.byTooltip('播放视频'));
+        await tester.pumpAndSettle();
+        expect(played, ['saved']);
+        expect(calls.length, 1);
+        await tester.tap(find.text('视频 (1).mp4'));
+        await tester.pumpAndSettle();
+        expect(find.text('打开所在文件夹'), findsOneWidget);
+        expect(find.text('播放视频'), findsOneWidget);
+        Navigator.of(tester.element(find.text('播放视频'))).pop();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('未完成.mp4'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('download-stream-play')), findsOneWidget);
+        expect(find.text('边下边播'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await tester.runAsync(() async {
+          await services.close();
+          await root.delete(recursive: true);
+        });
+      }
+    },
+    skip: !Platform.isWindows,
+  );
+}

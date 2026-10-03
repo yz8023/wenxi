@@ -1,0 +1,771 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:asterlink/core/crypto_box.dart';
+import 'package:asterlink/core/json.dart';
+import 'package:asterlink/data/http.dart';
+import 'package:asterlink/data/providers/pan123.dart';
+import 'package:asterlink/data/state_store.dart';
+import 'package:asterlink/diagnostics/redaction.dart';
+import 'package:asterlink/domain/auth.dart';
+import 'package:asterlink/domain/models.dart';
+import 'native_login_support.dart';
+import 'support.dart';
+
+const _platform = CloudPlatform.pan123;
+const _password = ' Example password + 文 ';
+const _personal = BrowseSession(
+  platform: _platform,
+  mode: BrowseMode.personal,
+  title: 'personal',
+  rootId: '0',
+);
+const _share = BrowseSession(
+  platform: _platform,
+  mode: BrowseMode.share,
+  title: 'share',
+  rootId: '0',
+  metadata: {'shareKey': 'fixture', 'passcode': 'test'},
+);
+final _file = CloudFile(
+  id: '10',
+  name: 'fixture.mp4',
+  size: 100,
+  token: encoded({'s3': '123456-0', 'etag': 'fixture', 'storage': '123456'}),
+);
+const _info = '/b/api/user/info';
+const _list = '/b/api/file/list/new';
+const _download = '/api/file/download_info';
+const _copy = '/b/api/restful/goapi/v1/file/copy/save';
+
+String _bearer(RecordedRequest r) =>
+    r.headers.entries
+        .where((e) => e.key.toLowerCase() == 'authorization')
+        .firstOrNull
+        ?.value ??
+    '';
+Matcher _loginRequired(String message) => throwsA(
+  isA<AccountLoginRequired>().having(
+    (e) => e.message,
+    'message',
+    contains(message),
+  ),
+);
+HttpResult _ok(Json data) => jsonResponse({'code': 0, 'data': data});
+HttpResult _signedIn([String token = 'renewed-token']) => jsonResponse({
+  'code': 200,
+  'data': {'token': token},
+});
+
+class _Fixture {
+  _Fixture({
+    StateStore? store,
+    String? token = 'old-token',
+    String authType = 'password',
+  }) : store = store ?? StateStore.memory() {
+    vault = Vault(this.store);
+    initial = Credential('123', {
+      'primary': 'fixture-phone',
+      'secondary': _password,
+      'authType': authType,
+      'userId': '12345',
+      'accessToken': ?token,
+    }, updatedAt: 42);
+    http = LoginHttp(respond);
+    connector = Pan123Connector(
+      http,
+      vault,
+      taskDelay: Duration.zero,
+      now: () => now,
+    );
+    login = AccountLoginService(
+      vault,
+      (_, c) => connector.account(c),
+      webAuthenticators: {_platform: connector.authenticate},
+    );
+  }
+  final StateStore store;
+  late final Vault vault;
+  late final LoginHttp http;
+  late final Pan123Connector connector;
+  late final AccountLoginService login;
+  late final Credential initial;
+  final now = DateTime.utc(2030, 1, 2);
+  bool oldAccepted = false;
+  FutureOr<HttpResult?> Function(RecordedRequest)? override;
+  Future<void> seed() => vault.putCredential(_platform, initial);
+  int get signIns =>
+      http.calls.where((r) => r.uri.path.endsWith('/sign_in')).length;
+
+  Future<HttpResult> respond(RecordedRequest r) async {
+    final custom = await override?.call(r);
+    if (custom != null) return custom;
+    if (r.uri.path.endsWith('/sign_in')) return _signedIn();
+    if (r.uri.host == 'download.invalid') return const HttpResult(206, 'bytes');
+    if (!oldAccepted && _bearer(r) != 'Bearer renewed-token') {
+      return jsonResponse({'code': 401});
+    }
+    return switch (r.uri.path) {
+      _info => _ok({
+        'UID': 12345,
+        'Nickname': 'fixture user',
+        'SpaceUsed': 5,
+        'SpacePermanent': 1000,
+        'SpaceTemp': 0,
+      }),
+      _list => _ok({
+        'InfoList': [
+          {
+            'FileId': 11,
+            'FileName': _file.name,
+            'Size': _file.size,
+            'Type': 0,
+            'ParentFileId': 88,
+            'S3KeyFlag': '123456-0',
+            'Etag': 'fixture',
+          },
+        ],
+        'Next': '-1',
+      }),
+      _download => _ok({'DownloadUrl': 'https://download.invalid/video.mp4'}),
+      '/b/api/file/upload_request' => _ok({
+        'Info': {'FileId': 88},
+      }),
+      _copy => _ok({'taskID': 'copy-task'}),
+      '$_copy/get' => _ok({'finished': true}),
+      '/b/api/share/create' => _ok({'ShareKey': 'created'}),
+      _ => _ok({}),
+    };
+  }
+}
+
+void main() {
+  for (final seconds in [-60, 30]) {
+    test(
+      'JWT expiry $seconds seconds from now renews before an API request and preserves ownership',
+      () async {
+        final expiry =
+            DateTime.utc(2030, 1, 2).millisecondsSinceEpoch ~/ 1000 + seconds;
+        final jwt =
+            'e30.${base64UrlEncode(utf8.encode(encoded({'exp': expiry})))}.fixture';
+        final f = _Fixture(token: jwt);
+        await f.seed();
+        expect((await f.connector.account(f.initial)).used, 5);
+        expect(f.http.calls.first.uri.path, '/api/user/sign_in');
+        expect(f.http.calls.first.json['password'], _password);
+        expect(f.vault.credential(_platform)!.updatedAt, 42);
+        expect(f.vault.credential(_platform)!.field('secondary'), _password);
+        await f.connector.list(_personal, '0', f.initial);
+        await f.connector.download(_personal, _file, f.initial);
+        expect(f.signIns, 1);
+        expect(f.http.calls.where((r) => _bearer(r) == 'Bearer $jwt'), isEmpty);
+        for (var i = 0; i < f.http.calls.length; i++) {
+          if (_bearer(f.http.calls[i]).isNotEmpty) {
+            expect(f.http.redirects[i], isFalse);
+          }
+        }
+      },
+    );
+  }
+
+  test(
+    'Unexpired and opaque tokens avoid a separate validation request on every operation',
+    () async {
+      for (final token in [
+        'opaque-token',
+        'e30.${base64UrlEncode(utf8.encode('{"exp":2000000000}'))}.signature',
+        'malformed.jwt.signature',
+      ]) {
+        final f = _Fixture(token: token)..oldAccepted = true;
+        await f.seed();
+        expect((await f.connector.account(f.initial)).total, 1000);
+        await f.connector.list(_personal, '0', f.initial);
+        expect(f.signIns, 0);
+        expect(f.http.calls.where((r) => r.uri.path == _info), hasLength(1));
+      }
+    },
+  );
+
+  for (final http401 in [false, true]) {
+    test(
+      '${http401 ? 'HTTP 401 with a non-JSON body' : 'JSON code 401'} renews once and retries the original request',
+      () async {
+        final f = _Fixture();
+        f.override = (r) => _bearer(r) == 'Bearer old-token'
+            ? http401
+                  ? const HttpResult(401, '<html>expired</html>')
+                  : jsonResponse({'code': 401})
+            : null;
+        await f.seed();
+        expect((await f.connector.account(f.initial)).nickname, 'fixture user');
+        expect(f.signIns, 1);
+        expect(f.http.calls.where((r) => r.uri.path == _info), hasLength(3));
+        expect(
+          f.vault.credential(_platform)!.field('accessToken'),
+          'renewed-token',
+        );
+      },
+    );
+  }
+
+  test(
+    'Concurrent quota, list and download requests share one password login',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<HttpResult>();
+      f.override = (r) {
+        if (!r.uri.path.endsWith('/sign_in')) return null;
+        entered.complete();
+        return answer.future;
+      };
+      await f.seed();
+      final pending = Future.wait<Object?>([
+        for (var i = 0; i < 4; i++) f.connector.account(f.initial),
+        f.connector.list(_personal, '0', f.initial),
+        f.connector.download(_personal, _file, f.initial),
+      ]);
+      await entered.future;
+      await until(
+        () =>
+            f.http.calls
+                .where((r) => _bearer(r) == 'Bearer old-token')
+                .length ==
+            6,
+      );
+      answer.complete(_signedIn());
+      await pending;
+      expect(f.signIns, 1);
+      expect(f.vault.credential(_platform)!.updatedAt, f.initial.updatedAt);
+      final before = f.http.calls.length;
+      await f.connector.createShare(
+        _personal,
+        [_file],
+        const ShareOptions('fixture'),
+        f.initial,
+      );
+      expect(_bearer(f.http.calls[before]), 'Bearer renewed-token');
+      expect(f.signIns, 1);
+    },
+  );
+
+  test(
+    'A late rejection of an old token reuses an already completed renewal',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          delayed = Completer<HttpResult>();
+      f.override = (r) {
+        if (r.uri.path == _list && _bearer(r) == 'Bearer old-token') {
+          entered.complete();
+          return delayed.future;
+        }
+        return null;
+      };
+      await f.seed();
+      final pending = f.connector.list(_personal, '0', f.initial);
+      await entered.future;
+      await f.connector.account(f.initial);
+      delayed.complete(jsonResponse({'code': 401}));
+      expect(await pending, hasLength(1));
+      expect(f.signIns, 1);
+    },
+  );
+
+  test(
+    'A cancelled login finishing late cannot release the newer login lock',
+    () async {
+      final f = _Fixture();
+      final entered = Completer<void>(), oldResult = Completer<LoginResult>();
+      final old = expectLater(
+        f.login.submit(_platform, (_) {
+          entered.complete();
+          return oldResult.future;
+        }),
+        throwsA(isA<AppException>()),
+      );
+      await entered.future;
+      f.login.invalidate(_platform);
+      final nextEntered = Completer<void>(),
+          nextResult = Completer<LoginResult>();
+      final next = f.login.submit(_platform, (_) {
+        nextEntered.complete();
+        return nextResult.future;
+      });
+      await nextEntered.future;
+      oldResult.complete(LoginResult(f.initial, const CloudAccount('old')));
+      await old;
+      await expectLater(
+        f.login.submitWeb(_platform, 'renewed-token'),
+        throwsA(
+          isA<AppException>().having(
+            (e) => e.message,
+            'message',
+            contains('正在提交'),
+          ),
+        ),
+      );
+      nextResult.complete(LoginResult(f.initial, const CloudAccount('new')));
+      expect((await next).account.nickname, 'new');
+    },
+  );
+
+  final operations = <String, Future<void> Function(_Fixture)>{
+    _list: (f) async {
+      await f.connector.list(_personal, '0', f.initial);
+    },
+    _download: (f) async {
+      await f.connector.download(_personal, _file, f.initial);
+    },
+    '/b/api/file/rename': (f) =>
+        f.connector.rename(_personal, _file, 'renamed', f.initial),
+    '/b/api/file/mod_pid': (f) =>
+        f.connector.move(_personal, [_file], '8', f.initial),
+    '/b/api/file/trash': (f) =>
+        f.connector.delete(_personal, [_file], f.initial),
+    '/b/api/share/create': (f) async {
+      await f.connector.createShare(
+        _personal,
+        [_file],
+        const ShareOptions('fixture'),
+        f.initial,
+      );
+    },
+    '/b/api/file/upload_request': (f) async {
+      final spec = await f.connector.download(_share, _file, f.initial);
+      expect(spec.cleanup!.action!['accountRevision'], f.initial.updatedAt);
+    },
+    _copy: (f) => f.connector.saveShare(_share, [_file], '8', f.initial),
+    '$_copy/get': (f) => f.connector.saveShare(_share, [_file], '8', f.initial),
+  };
+  for (final operation in operations.entries) {
+    test('Auth expiry is handled at ${operation.key}', () async {
+      final f = _Fixture()..oldAccepted = true;
+      f.override = (r) =>
+          r.uri.path == operation.key && _bearer(r) == 'Bearer old-token'
+          ? jsonResponse({'code': 401})
+          : null;
+      await f.seed();
+      await operation.value(f);
+      expect(f.signIns, 1);
+      final calls = f.http.calls
+          .where((r) => r.uri.path == operation.key)
+          .toList();
+      expect(calls, hasLength(2));
+      expect(_bearer(calls.first), 'Bearer old-token');
+      expect(_bearer(calls.last), 'Bearer renewed-token');
+    });
+  }
+
+  for (final status in [403, 429, 500]) {
+    test(
+      'HTTP $status does not trigger a login or replay a file mutation',
+      () async {
+        final f = _Fixture();
+        f.override = (_) =>
+            jsonResponse({'code': 401, 'message': 'service error'}, status);
+        await f.seed();
+        await expectLater(
+          f.connector.delete(_personal, [_file], f.initial),
+          throwsA(isA<AppException>()),
+        );
+        expect(f.signIns, 0);
+        expect(f.http.calls, hasLength(1));
+        expect(f.vault.credential(_platform)!.sameAs(f.initial), isTrue);
+      },
+    );
+  }
+
+  test(
+    'Network failures do not silently replay a mutation or trigger password login',
+    () async {
+      final f = _Fixture();
+      f.override = (_) => throw const AppException('network unavailable');
+      await f.seed();
+      await expectLater(
+        f.connector.delete(_personal, [_file], f.initial),
+        throwsA(isA<AppException>()),
+      );
+      expect(f.signIns, 0);
+      expect(f.http.calls, hasLength(1));
+    },
+  );
+
+  test(
+    'A rejected saved password prompts manual login and stays blocked across restarts until explicit login',
+    () async {
+      final f = _Fixture();
+      f.override = (r) => r.uri.path.endsWith('/sign_in')
+          ? jsonResponse({'code': 401, 'message': 'rejected $_password'})
+          : null;
+      await f.seed();
+      await expectLater(
+        f.connector.account(f.initial),
+        _loginRequired('自动登录失败'),
+      );
+      expect(f.signIns, 1);
+      final saved = f.vault.credential(_platform)!;
+      expect(saved.field('accessToken'), 'old-token');
+      expect(saved.field('autoLoginBlocked'), '1');
+      expect(saved.updatedAt, f.initial.updatedAt);
+      final restarted = Pan123Connector(f.http, f.vault);
+      final count = f.http.calls.length;
+      await expectLater(restarted.account(saved), _loginRequired('重新登录'));
+      expect(f.http.calls.length, count);
+      f.override = null;
+      final result = await f.login.submit(
+        _platform,
+        (_) => f.connector.password('fixture-phone', _password),
+      );
+      expect(result.credential.field('autoLoginBlocked'), isEmpty);
+      expect(result.credential.updatedAt, greaterThan(f.initial.updatedAt));
+      expect((await restarted.account(result.credential)).used, 5);
+    },
+  );
+
+  for (final invalid in [
+    'rejected-token',
+    'empty-identity',
+    'different-account',
+  ]) {
+    test(
+      'A renewed token with $invalid cannot replace the saved token',
+      () async {
+        final f = _Fixture();
+        f.override = (r) {
+          if (r.uri.path != _info || _bearer(r) != 'Bearer renewed-token') {
+            return null;
+          }
+          return switch (invalid) {
+            'rejected-token' => jsonResponse({'code': 401}),
+            'empty-identity' => _ok({}),
+            _ => _ok({'UID': 987, 'Nickname': 'someone else'}),
+          };
+        };
+        await f.seed();
+        await expectLater(
+          f.connector.list(_personal, '0', f.initial),
+          _loginRequired('自动登录失败'),
+        );
+        expect(f.signIns, 1);
+        expect(
+          f.vault.credential(_platform)!.field('accessToken'),
+          'old-token',
+        );
+        expect(f.http.calls.where((r) => r.uri.path == _list), hasLength(1));
+      },
+    );
+  }
+
+  test(
+    'A repeated 401 after renewal stops after one retry and requires manual login',
+    () async {
+      final f = _Fixture();
+      f.override = (r) =>
+          r.uri.path == _list ? jsonResponse({'code': 401}) : null;
+      await f.seed();
+      await expectLater(
+        f.connector.list(_personal, '0', f.initial),
+        _loginRequired('自动登录失败'),
+      );
+      expect(f.signIns, 1);
+      expect(f.http.calls.where((r) => r.uri.path == _list), hasLength(2));
+      final count = f.http.calls.length;
+      await expectLater(
+        f.connector.list(_personal, '0', f.initial),
+        _loginRequired('重新登录'),
+      );
+      expect(f.http.calls.length, count);
+    },
+  );
+
+  test(
+    'Legacy saved passwords use their matching cached token and migrate it on expiry',
+    () async {
+      final f = _Fixture(token: null, authType: '')..oldAccepted = true;
+      await f.seed();
+      await f.vault.putSecret('pan123.access_token', 'old-token');
+      await f.connector.account(f.initial);
+      expect(f.signIns, 0);
+      f.oldAccepted = false;
+      await f.connector.list(_personal, '0', f.initial);
+      expect(f.signIns, 1);
+      expect(f.vault.secret('pan123.access_token'), isNull);
+      expect(
+        f.vault.credential(_platform)!.field('accessToken'),
+        'renewed-token',
+      );
+      await f.connector.account(f.initial);
+      expect(f.signIns, 1);
+    },
+  );
+
+  test(
+    'Saved credentials with no token sign in once and validate before first use',
+    () async {
+      final f = _Fixture(token: null);
+      await f.seed();
+      await f.connector.account(f.initial);
+      expect(f.http.calls.first.uri.path, '/api/user/sign_in');
+      expect(f.signIns, 1);
+    },
+  );
+
+  for (final authType in ['webToken', 'passwordToken']) {
+    test(
+      '$authType cannot borrow the previous password or auto-login',
+      () async {
+        final f = _Fixture();
+        await f.seed();
+        final candidate = Credential('web', {
+          'primary': 'web-token',
+          'accessToken': 'web-token',
+          'authType': authType,
+        }, updatedAt: 123);
+        await f.vault.replaceCredential(_platform, f.initial, candidate);
+        await expectLater(
+          f.connector.account(candidate),
+          _loginRequired('登录已失效'),
+        );
+        expect(f.signIns, 0);
+        expect(f.vault.credential(_platform)!.field('secondary'), isEmpty);
+      },
+    );
+  }
+
+  test(
+    'A rejected explicit web candidate never gets repaired with the saved password',
+    () async {
+      final f = _Fixture();
+      await f.seed();
+      await expectLater(
+        f.login.submitWeb(_platform, 'invalid-web-token'),
+        _loginRequired('登录已失效'),
+      );
+      expect(f.signIns, 0);
+      expect(f.vault.credential(_platform)!.sameAs(f.initial), isTrue);
+    },
+  );
+
+  test(
+    'Successful web fallback clears saved passwords even for a previous blocked account',
+    () async {
+      final f = _Fixture();
+      await f.seed();
+      await f.vault.putCredential(
+        _platform,
+        f.initial.withFields({'autoLoginBlocked': '1'}, preserveRevision: true),
+      );
+      final result = await f.login.submitWeb(_platform, 'renewed-token');
+      expect(result.credential.field('authType'), 'webToken');
+      expect(result.credential.field('secondary'), isEmpty);
+      expect(result.credential.field('autoLoginBlocked'), isEmpty);
+      expect(f.signIns, 0);
+    },
+  );
+
+  test(
+    'Logout during automatic login cannot resurrect an account or resume its request',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<HttpResult>();
+      f.override = (r) {
+        if (!r.uri.path.endsWith('/sign_in')) return null;
+        entered.complete();
+        return answer.future;
+      };
+      await f.seed();
+      final pending = expectLater(
+        f.connector.list(_personal, '0', f.initial),
+        _loginRequired('账号已退出'),
+      );
+      await entered.future;
+      await f.login.remove(_platform);
+      answer.complete(_signedIn());
+      await pending;
+      expect(f.vault.credential(_platform), isNull);
+      expect(f.http.calls.where((r) => r.uri.path == _info), isEmpty);
+      final count = f.http.calls.length;
+      await expectLater(
+        f.connector.account(f.initial),
+        _loginRequired('账号已退出'),
+      );
+      expect(f.http.calls.length, count);
+    },
+  );
+
+  test(
+    'Account replacement during new-token validation prevents a late refresh commit',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<HttpResult>();
+      f.override = (r) {
+        if (r.uri.path != _info || _bearer(r) != 'Bearer renewed-token') {
+          return null;
+        }
+        entered.complete();
+        return answer.future;
+      };
+      await f.seed();
+      final pending = expectLater(
+        f.connector.list(_personal, '0', f.initial),
+        _loginRequired('发生变化'),
+      );
+      await entered.future;
+      final replacement = Credential('second', {
+        'primary': 'new-user',
+        'secondary': 'new-password',
+        'accessToken': 'second-token',
+        'authType': 'password',
+      }, updatedAt: 100);
+      await f.vault.putCredential(_platform, replacement);
+      answer.complete(_ok({'UID': 12345, 'Nickname': 'old user'}));
+      await pending;
+      expect(f.vault.credential(_platform)!.sameAs(replacement), isTrue);
+      expect(f.http.calls.where((r) => r.uri.path == _list), hasLength(1));
+    },
+  );
+
+  test(
+    'Cancelling one waiting request does not cancel a shared automatic login',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<HttpResult>();
+      final firstScope = RequestScope(), secondScope = RequestScope();
+      f.override = (r) {
+        if (!r.uri.path.endsWith('/sign_in')) return null;
+        expect(RequestScope.current, isNot(same(firstScope.token)));
+        expect(RequestScope.current, isNot(same(secondScope.token)));
+        entered.complete();
+        return answer.future;
+      };
+      await f.seed();
+      final first = expectLater(
+        firstScope.run(() => f.connector.account(f.initial)),
+        throwsA(
+          isA<AppException>().having(
+            (e) => e.message,
+            'message',
+            contains('取消'),
+          ),
+        ),
+      );
+      final second = secondScope.run(
+        () => f.connector.list(_personal, '0', f.initial),
+      );
+      await entered.future;
+      firstScope.cancel();
+      await first;
+      answer.complete(_signedIn());
+      expect(await second, hasLength(1));
+      expect(f.signIns, 1);
+      expect(
+        f.vault.credential(_platform)!.field('accessToken'),
+        'renewed-token',
+      );
+    },
+  );
+
+  test(
+    'Explicit account switching can commit after the previous session renewed meanwhile',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<LoginResult>();
+      await f.seed();
+      final pending = f.login.submit(_platform, (_) {
+        entered.complete();
+        return answer.future;
+      });
+      await entered.future;
+      await f.connector.account(f.initial);
+      answer.complete(
+        LoginResult(
+          Credential('new user', {
+            'primary': 'second-account',
+            'secondary': 'second-password',
+            'accessToken': 'second-token',
+            'authType': 'password',
+          }),
+          const CloudAccount('second user'),
+        ),
+      );
+      final result = await pending;
+      expect(result.credential.primary, 'second-account');
+      expect(result.credential.updatedAt, greaterThan(f.initial.updatedAt));
+    },
+  );
+
+  test(
+    'Changing login method permits a new login while its cancelled predecessor is still finishing',
+    () async {
+      final f = _Fixture(),
+          entered = Completer<void>(),
+          answer = Completer<LoginResult>();
+      final previous = expectLater(
+        f.login.submit(_platform, (_) {
+          entered.complete();
+          return answer.future;
+        }),
+        throwsA(isA<AppException>()),
+      );
+      await entered.future;
+      f.login.invalidate(_platform);
+      final next = await f.login.submitWeb(_platform, 'renewed-token');
+      answer.complete(
+        LoginResult(f.initial, const CloudAccount('late account')),
+      );
+      await previous;
+      expect(f.vault.credential(_platform)!.sameAs(next.credential), isTrue);
+    },
+  );
+
+  test(
+    'Remembered 123 passwords survive encrypted storage without appearing in disk files or diagnostics',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'asterlink-123-vault-test-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final key = CryptoBox.random(32);
+      final encryptedStore = await StateStore.open(directory, testKey: key);
+      final f = _Fixture(store: encryptedStore);
+      final result = await f.login.submit(
+        _platform,
+        (_) => f.connector.password('fixture-phone', _password),
+      );
+      await encryptedStore.flush();
+      for (final file
+          in await directory
+              .list()
+              .where((entry) => entry is File)
+              .cast<File>()
+              .toList()) {
+        final raw = latin1.decode(await file.readAsBytes());
+        expect(raw, isNot(contains('Example password')));
+        expect(raw, isNot(contains('fixture-phone')));
+        expect(raw, isNot(contains('renewed-token')));
+      }
+      final reopened = await StateStore.open(directory, testKey: key);
+      expect(
+        Vault(reopened).credential(_platform)!.field('secondary'),
+        _password,
+      );
+      final diagnostic = LogRedactor.json(result.credential.toJson());
+      expect(diagnostic, isNot(contains('Example password')));
+      expect(diagnostic, isNot(contains('fixture-phone')));
+      expect(
+        LogRedactor.text('secondary="$_password" primary="fixture-phone"'),
+        isNot(contains('Example password')),
+      );
+      await f.login.remove(_platform);
+      expect(f.vault.credential(_platform), isNull);
+      reopened.dispose();
+      encryptedStore.dispose();
+    },
+  );
+}

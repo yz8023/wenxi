@@ -1,0 +1,20 @@
+* text=auto
+*.dart text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.go text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.zip binary
+native/gopeed/vendor/** linguist-vendored
+vendor_plugins/** linguist-vendored
+windows/installer/languages/*.isl text eol=lf

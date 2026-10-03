@@ -1,0 +1,22 @@
+[versions]
+androidx-core = "1.17.0"
+androidx-documentfile = "1.0.0"
+androidx-datastore = "1.2.1"
+kotlinx-coroutines = "1.10.2"
+metrics-core = "9.9.10"
+metrics-device = "1.8.7.2"
+junit = "4.13.2"
+robolectric = "4.16.1"
+
+[libraries]
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "androidx-documentfile" }
+androidx-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
+kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+metrics-core = { module = "com.umeng.umsdk:common", version.ref = "metrics-core" }
+metrics-device = { module = "com.umeng.umsdk:asms", version.ref = "metrics-device" }
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+
+[bundles]
+platform = ["androidx-core", "androidx-documentfile", "androidx-datastore", "kotlinx-coroutines", "metrics-core", "metrics-device"]
